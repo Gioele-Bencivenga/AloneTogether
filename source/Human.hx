@@ -1,12 +1,17 @@
 package;
 
+import flixel.math.FlxMath;
+import flixel.math.FlxAngle;
+import nape.geom.Vec2;
+import flixel.addons.nape.FlxNapeSprite;
 import flixel.FlxObject;
-import flixel.util.FlxColor;
 import flixel.math.FlxPoint;
 import flixel.FlxSprite;
 
-class Human extends FlxSprite {
-	static inline final SPEED:Float = 150;
+class Human extends FlxNapeSprite {
+	static inline final SPEED:Float = 5;
+
+	var direction:Vec2; // direction vector used to apply movement impulse
 
 	var up:Bool = false;
 	var down:Bool = false;
@@ -16,7 +21,9 @@ class Human extends FlxSprite {
 	public function new(x:Float = 0, y:Float = 0, sprite:String) {
 		super(x, y);
 
-		drag.x = drag.y = 1200; // after releasing movement keys we slide for a bit before stopping
+		createCircularBody(5);
+		setBodyMaterial(1, 0.001, 0.001, 1, 0.001);
+		setDrag(0.85, 0.85);
 
 		loadGraphic(sprite, true, 16, 16);
 
@@ -40,7 +47,7 @@ class Human extends FlxSprite {
 			left = right = false;
 
 		if (up || down || left || right) {
-			var directionAngle:Float = 0; // we use angles since we allow diagonal movement (if we were to just set velocity.x/y diagonal movement would be faster)
+			var directionAngle:Float = 0;
 			if (up) {
 				directionAngle = -90;
 				if (left)
@@ -63,11 +70,11 @@ class Human extends FlxSprite {
 				facing = FlxObject.RIGHT;
 			}
 
-			velocity.set(SPEED, 0);
-			velocity.rotate(FlxPoint.weak(0, 0), directionAngle);
+			direction = Vec2.fromPolar(SPEED, directionAngle * FlxAngle.TO_RAD); // I have no clue how to use radians so I'm just gonna convert the value
+			body.applyImpulse(direction);
 
 			// if the player is moving (velocity is not 0 for either axis), we change the animation to match their facing
-			if ((velocity.x != 0 || velocity.y != 0) && touching == FlxObject.NONE) {
+			if (Math.abs(body.velocity.x) >= SPEED || Math.abs(body.velocity.y) >= SPEED) {
 				switch (facing) {
 					case FlxObject.LEFT:
 						animation.play("walkLeft");
