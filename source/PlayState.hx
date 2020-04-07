@@ -6,6 +6,7 @@ import flixel.FlxObject;
 import flixel.tile.FlxTilemap;
 import flixel.addons.editors.ogmo.FlxOgmo3Loader;
 import flixel.FlxState;
+import source.myClasses.*;
 
 class PlayState extends FlxState {
 	var player:Player;

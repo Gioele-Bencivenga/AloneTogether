@@ -1,4 +1,4 @@
-package;
+package myClasses;
 
 import flixel.FlxObject;
 import flixel.FlxG;
