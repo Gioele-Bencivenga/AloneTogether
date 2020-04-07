@@ -10,7 +10,7 @@ class Main extends Sprite
 	{
 		super();
 		
-		addChild(new FlxGame(0, 0, MenuState, 1, 60, 60, true));
+		addChild(new FlxGame(1280, 720, MenuState, 1, 60, 60, true));
 
 		// we enable the system cursor instead of using the default since flixel's cursor is kind of laggy
 		FlxG.mouse.useSystemCursor = true;

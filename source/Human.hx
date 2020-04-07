@@ -1,31 +1,26 @@
 package;
 
-import flixel.math.FlxMath;
-import flixel.math.FlxAngle;
-import nape.geom.Vec2;
-import flixel.addons.nape.FlxNapeSprite;
 import flixel.FlxObject;
 import flixel.math.FlxPoint;
 import flixel.FlxSprite;
 
-class Human extends FlxNapeSprite {
-	static inline final SPEED:Float = 5;
-
-	var direction:Vec2; // direction vector used to apply movement impulse
+class Human extends FlxSprite {
+	static inline final SPEED:Float = 150;
 
 	var up:Bool = false;
 	var down:Bool = false;
 	var left:Bool = false;
 	var right:Bool = false;
 
-	public function new(x:Float = 0, y:Float = 0, sprite:String) {
+	public function new(x:Float, y:Float, sprite:String) {
 		super(x, y);
 
-		createCircularBody(5);
-		setBodyMaterial(1, 0.001, 0.001, 1, 0.001);
-		setDrag(0.85, 0.85);
+		drag.x = drag.y = 1200;
 
 		loadGraphic(sprite, true, 16, 16);
+
+		setSize(8, 8); // setting hitbox size to half the graphic (also half of the tiles)
+		offset.set(4, 8); // setting the offset of the hitbox to the player's feet
 
 		animation.add("walkLeft", [0, 1, 0, 2], 6, false);
 		animation.add("walkRight", [0, 1, 0, 2], 6, false, true);
@@ -70,11 +65,11 @@ class Human extends FlxNapeSprite {
 				facing = FlxObject.RIGHT;
 			}
 
-			direction = Vec2.fromPolar(SPEED, directionAngle * FlxAngle.TO_RAD); // I have no clue how to use radians so I'm just gonna convert the value
-			body.applyImpulse(direction);
+			velocity.set(SPEED, 0);
+			velocity.rotate(FlxPoint.weak(0, 0), directionAngle);
 
 			// if the player is moving (velocity is not 0 for either axis), we change the animation to match their facing
-			if (Math.abs(body.velocity.x) >= SPEED || Math.abs(body.velocity.y) >= SPEED) {
+			if ((velocity.x != 0 || velocity.y != 0) && touching == FlxObject.NONE) {
 				switch (facing) {
 					case FlxObject.LEFT:
 						animation.play("walkLeft");
