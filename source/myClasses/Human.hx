@@ -5,19 +5,21 @@ import flixel.math.FlxPoint;
 import flixel.FlxSprite;
 
 class Human extends FlxSprite {
-	static inline final SPEED:Float = 150;
+	var speed:Float = 100;
+	var runSpeed:Float = 150;
 
 	var up:Bool = false;
 	var down:Bool = false;
 	var left:Bool = false;
 	var right:Bool = false;
+	var running:Bool = false;
 
-	public function new(x:Float, y:Float, sprite:String) {
-		super(x, y);
+	public function new(_x:Float, _y:Float, _sprite:String) {
+		super(_x, _y);
 
 		drag.x = drag.y = 1200;
 
-		loadGraphic(sprite, true, 16, 16);
+		loadGraphic(_sprite, true, 16, 16);
 
 		setSize(8, 8); // setting hitbox size to half the graphic (also half of the tiles)
 		offset.set(4, 8); // setting the offset of the hitbox to the player's feet
@@ -65,11 +67,15 @@ class Human extends FlxSprite {
 				facing = FlxObject.RIGHT;
 			}
 
-			velocity.set(SPEED, 0);
+			if (running) {
+				velocity.set(runSpeed, 0);
+			} else {
+				velocity.set(speed, 0);
+			}
 			velocity.rotate(FlxPoint.weak(0, 0), directionAngle);
 
 			// if the player is moving (velocity is not 0 for either axis), we change the animation to match their facing
-			if ((velocity.x != 0 || velocity.y != 0) && touching == FlxObject.NONE) {
+			if (velocity.x != 0 || velocity.y != 0) {
 				switch (facing) {
 					case FlxObject.LEFT:
 						animation.play("walkLeft");
