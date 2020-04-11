@@ -55,7 +55,7 @@ class PlayState extends FlxState {
 		/// PLAYER STUFF
 		player = new Player();
 		add(player);
-		add(player.virusEmitter);
+		add(player.emitter);
 		player.infect();
 		
 		/// ACTOR STUFF
@@ -118,8 +118,8 @@ class PlayState extends FlxState {
 					AssetPaths.bobunter__png
 				]);
 				var newNpc = new NPC(entity.x + 4, entity.y + 4, npcSprite);
-				add(newNpc.virusEmitter);
-				emitters.add(newNpc.virusEmitter);
+				add(newNpc.emitter);
+				emitters.add(newNpc.emitter);
 				npcs.add(newNpc);
 		}
 	}
