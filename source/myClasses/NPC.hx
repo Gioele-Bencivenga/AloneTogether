@@ -27,7 +27,7 @@ class NPC extends Human {
 
 	override function update(elapsed:Float) {
 		// brain.update(elapsed);
-		//idle();
+		idle();
 
 		super.update(elapsed);
 	}

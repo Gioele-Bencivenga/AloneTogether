@@ -1,5 +1,7 @@
 package;
 
+import flixel.effects.particles.FlxParticle;
+import flixel.effects.particles.FlxEmitter;
 import flixel.math.FlxMath;
 import flixel.group.FlxGroup;
 import flixel.group.FlxGroup.FlxTypedGroup;
@@ -16,6 +18,8 @@ class PlayState extends FlxState {
 	var coins:FlxTypedGroup<Coin>; // group of coins
 	var npcs:FlxTypedGroup<NPC>; // group of npcs
 	var actors:FlxGroup; // group of npcs + player
+
+	public static var emitters:FlxGroup; // group of emitters
 
 	var map:FlxOgmo3Loader;
 	var collisionsLayer:FlxTilemap;
@@ -39,6 +43,10 @@ class PlayState extends FlxState {
 		/// COIN STUFF
 		coins = new FlxTypedGroup<Coin>();
 		add(coins);
+		
+		/// VIRUS STUFF
+		emitters = new FlxGroup();
+		add(emitters);
 
 		/// NPC STUFF
 		npcs = new FlxTypedGroup<NPC>();
@@ -46,13 +54,17 @@ class PlayState extends FlxState {
 
 		/// PLAYER STUFF
 		player = new Player();
-		map.loadEntities(placeEntities, "entities");
 		add(player);
-
-		/// GROUPS STUFF
-		actors = new FlxTypedGroup();
+		add(player.virusEmitter);
+		player.infect();
+		
+		/// ACTOR STUFF
+		actors = new FlxGroup();
 		actors.add(player);
 		actors.add(npcs);
+		
+		/// ENTITIES STUFF
+		map.loadEntities(placeEntities, "entities");
 
 		// we put the rooftops after the player so they get rendered in front of it
 		rooftopsLayer = map.loadTilemap(AssetPaths.tilemap_packed__png, "rooftops");
@@ -71,12 +83,13 @@ class PlayState extends FlxState {
 
 		// collisions between actors
 		FlxG.collide(actors, actors);
-		// collisions between actors and coins
-		FlxG.overlap(actors, coins, coinTouched);
 		// collisions between actors and tilemap
 		FlxG.collide(actors, collisionsLayer);
 
-		// npcs.forEachAlive()
+		// overlap between actors and coins
+		FlxG.overlap(actors, coins, actorTouchesCoin);
+		// overlap between actors and virus
+		FlxG.overlap(actors, emitters, callback);
 
 		// pressing period/comma zooms in/out
 		if (FlxG.keys.justPressed.PERIOD) {
@@ -104,25 +117,25 @@ class PlayState extends FlxState {
 					AssetPaths.bobesha__png,
 					AssetPaths.bobunter__png
 				]);
-				npcs.add(new NPC(entity.x + 4, entity.y + 4, npcSprite));
-				/* Stress testing
-					npcs.add(new NPC(entity.x + 8, entity.y + 8, npcSprite));
-					npcs.add(new NPC(entity.x + 16, entity.y + 16, npcSprite));
-					npcs.add(new NPC(entity.x + 32, entity.y + 32, npcSprite));
-					npcs.add(new NPC(entity.x + 4, entity.y + 4, npcSprite));
-					npcs.add(new NPC(entity.x + 8, entity.y + 8, npcSprite));
-					npcs.add(new NPC(entity.x + 16, entity.y + 16, npcSprite));
-					npcs.add(new NPC(entity.x + 32, entity.y + 32, npcSprite));
-					npcs.add(new NPC(entity.x + 4, entity.y + 4, npcSprite));
-					npcs.add(new NPC(entity.x + 8, entity.y + 8, npcSprite));
-					npcs.add(new NPC(entity.x + 16, entity.y + 16, npcSprite));
-					npcs.add(new NPC(entity.x + 32, entity.y + 32, npcSprite)); */
+				var newNpc = new NPC(entity.x + 4, entity.y + 4, npcSprite);
+				add(newNpc.virusEmitter);
+				emitters.add(newNpc.virusEmitter);
+				npcs.add(newNpc);
 		}
 	}
 
-	function coinTouched(_actor:Human, _coin:Coin) {
+	function actorTouchesCoin(_actor:Human, _coin:Coin) {
 		if (_actor.alive && _actor.exists && _coin.alive && _coin.exists) {
 			_coin.kill();
+		}
+	}
+
+	function callback(_actor:Human, _particle:FlxParticle) {
+		trace("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+		if (_actor.alive && _actor.exists && _particle.alive && _particle.exists) {
+			if (!_actor.isInfected) {
+				_actor.infect();
+			}
 		}
 	}
 
