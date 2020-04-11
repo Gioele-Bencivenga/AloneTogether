@@ -19,7 +19,7 @@ class PlayState extends FlxState {
 	var npcs:FlxTypedGroup<NPC>; // group of npcs
 	var actors:FlxGroup; // group of npcs + player
 
-	public static var emitters:FlxGroup; // group of emitters
+	var emitters:FlxTypedGroup<FlxEmitter>; // group of emitters
 
 	var map:FlxOgmo3Loader;
 	var collisionsLayer:FlxTilemap;
@@ -45,7 +45,7 @@ class PlayState extends FlxState {
 		add(coins);
 		
 		/// VIRUS STUFF
-		emitters = new FlxGroup();
+		emitters = new FlxTypedGroup<FlxEmitter>();
 		add(emitters);
 
 		/// NPC STUFF
@@ -56,6 +56,7 @@ class PlayState extends FlxState {
 		player = new Player();
 		add(player);
 		add(player.emitter);
+		emitters.add(player.emitter);
 		player.infect();
 		
 		/// ACTOR STUFF
@@ -118,7 +119,6 @@ class PlayState extends FlxState {
 					AssetPaths.bobunter__png
 				]);
 				var newNpc = new NPC(entity.x + 4, entity.y + 4, npcSprite);
-				add(newNpc.emitter);
 				emitters.add(newNpc.emitter);
 				npcs.add(newNpc);
 		}
@@ -130,9 +130,9 @@ class PlayState extends FlxState {
 		}
 	}
 
-	function callback(_actor:Human, _particle:FlxParticle) {
+	function callback(_actor:Human, _emitter:FlxEmitter) {
 		trace("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-		if (_actor.alive && _actor.exists && _particle.alive && _particle.exists) {
+		if (_actor.alive && _actor.exists && _emitter.alive && _emitter.exists) {
 			if (!_actor.isInfected) {
 				_actor.infect();
 			}

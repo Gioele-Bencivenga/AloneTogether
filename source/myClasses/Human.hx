@@ -42,12 +42,13 @@ class Human extends FlxSprite {
 
 		/// EMITTER
 		emitter = new FlxEmitter(x, y);
+		emitter.solid = true; // you need this for overlap checks to work!
 		emitter.makeParticles(2, 2, FlxColor.PURPLE, 1000);
 		emitter.color.set(FlxColor.PURPLE, FlxColor.MAGENTA);
 		virusAlpha = FlxG.random.float(0.06, 0.5);
 		emitter.alpha.set(virusAlpha, virusAlpha, 0, 0.05);
-		virusLifespan = FlxG.random.int(5, 10);
-		emitter.lifespan.set(virusLifespan - 4, virusLifespan);
+		virusLifespan = FlxG.random.int(7, 15);
+		emitter.lifespan.set(virusLifespan - 6, virusLifespan);
 		emitter.drag.set(30);
 		emitter.speed.set(20, 35);
 		emitter.launchMode = FlxEmitterMode.CIRCLE;
