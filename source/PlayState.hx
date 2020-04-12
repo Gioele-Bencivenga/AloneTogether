@@ -57,16 +57,17 @@ class PlayState extends FlxState {
 		add(player);
 		add(player.emitter);
 		emitters.add(player.emitter);
-		player.infect();
 		
 		/// ACTOR STUFF
 		actors = new FlxGroup();
 		actors.add(player);
 		actors.add(npcs);
-		
+
 		/// ENTITIES STUFF
 		map.loadEntities(placeEntities, "entities");
-
+		
+		npcs.getRandom().infect();
+		
 		// we put the rooftops after the player so they get rendered in front of it
 		rooftopsLayer = map.loadTilemap(AssetPaths.tilemap_packed__png, "rooftops");
 		add(rooftopsLayer);
@@ -88,9 +89,9 @@ class PlayState extends FlxState {
 		FlxG.collide(actors, collisionsLayer);
 
 		// overlap between actors and coins
-		FlxG.overlap(actors, coins, actorTouchesCoin);
+		FlxG.overlap(actors, coins, humanTouchesCoin);
 		// overlap between actors and virus
-		FlxG.overlap(actors, emitters, callback);
+		FlxG.overlap(actors, emitters, humanTouchesVirus);
 
 		// pressing period/comma zooms in/out
 		if (FlxG.keys.justPressed.PERIOD) {
@@ -124,16 +125,15 @@ class PlayState extends FlxState {
 		}
 	}
 
-	function actorTouchesCoin(_actor:Human, _coin:Coin) {
+	function humanTouchesCoin(_actor:Human, _coin:Coin) {
 		if (_actor.alive && _actor.exists && _coin.alive && _coin.exists) {
 			_coin.kill();
 		}
 	}
 
-	function callback(_actor:Human, _emitter:FlxEmitter) {
-		trace("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+	function humanTouchesVirus(_actor:Human, _emitter:FlxEmitter) {
 		if (_actor.alive && _actor.exists && _emitter.alive && _emitter.exists) {
-			if (!_actor.isInfected) {
+			if (!_actor.isInfected && !_actor.isImmune) {
 				_actor.infect();
 			}
 		}

@@ -1,5 +1,6 @@
 package myClasses;
 
+import flixel.util.FlxTimer;
 import flixel.FlxG;
 import flixel.util.FlxColor;
 import flixel.effects.particles.FlxEmitter;
@@ -8,8 +9,11 @@ import flixel.math.FlxPoint;
 import flixel.FlxSprite;
 
 class Human extends FlxSprite {
-	var speed:Float = 80;
-	var runSpeed:Float = 120;
+	static inline final BASE_SPEED = 80;
+	static inline final BASE_RUNSPEED = 120;
+
+	var speed:Float;
+	var runSpeed:Float;
 
 	var up:Bool = false;
 	var down:Bool = false;
@@ -18,15 +22,26 @@ class Human extends FlxSprite {
 	var running:Bool = false;
 
 	public var isInfected(default, null):Bool;
-	public var emitter:FlxEmitter;
+	public var emitter(default, null):FlxEmitter;
 
-	var virusAlpha:Float;
-	var virusLifespan:Int;
+	var germAlpha:Float; // germ shade, unique for each person
+	var germLifespan:Int; // how long the germs (emitter particles) survive for
+
+	var sicknessTimer:FlxTimer; // how long a human is sick for
+	var immunityTimer:FlxTimer; // how long a human is immune for
+
+	var sicknessEffectsInterval:FlxTimer; // interval at which effects are applied
+
+	public var isImmune(default, null):Bool;
 
 	public function new(_x:Float, _y:Float, _sprite:String) {
 		super(_x, _y);
 
+		health = FlxG.random.int(5, 20);
+		speed = BASE_SPEED;
+		runSpeed = BASE_RUNSPEED;
 		isInfected = false;
+		isImmune = false;
 
 		/// PHYSICS
 		drag.x = drag.y = 1200;
@@ -45,13 +60,18 @@ class Human extends FlxSprite {
 		emitter.solid = true; // you need this for overlap checks to work!
 		emitter.makeParticles(2, 2, FlxColor.PURPLE, 1000);
 		emitter.color.set(FlxColor.PURPLE, FlxColor.MAGENTA);
-		virusAlpha = FlxG.random.float(0.06, 0.5);
-		emitter.alpha.set(virusAlpha, virusAlpha, 0, 0.05);
-		virusLifespan = FlxG.random.int(7, 15);
-		emitter.lifespan.set(virusLifespan - 6, virusLifespan);
-		emitter.drag.set(30);
-		emitter.speed.set(20, 35);
+		germAlpha = FlxG.random.float(0.1, 0.5);
+		emitter.alpha.set(germAlpha, germAlpha, 0, 0.1);
+		germLifespan = FlxG.random.int(7, 15);
+		emitter.lifespan.set(germLifespan - 6, germLifespan);
+		emitter.drag.set(1);
+		emitter.speed.set(6, 10);
 		emitter.launchMode = FlxEmitterMode.CIRCLE;
+
+		/// TIMER
+		sicknessTimer = new FlxTimer();
+		immunityTimer = new FlxTimer();
+		sicknessEffectsInterval = new FlxTimer();
 
 		/// HITBOX
 		setSize(8, 8); // setting hitbox size to half the graphic (also half of the tiles)
@@ -61,16 +81,7 @@ class Human extends FlxSprite {
 	override function update(elapsed:Float) {
 		updateMovement();
 
-		if (isInfected) {
-			if (!emitter.emitting) {
-				emitter.focusOn(this);
-				emitter.start(false, 0.05, 1);
-			}
-		} else if (!isInfected) {
-			if (emitter.emitting) {
-				emitter.emitting = false;
-			}
-		}
+		emitter.focusOn(this);
 
 		super.update(elapsed);
 	}
@@ -131,5 +142,43 @@ class Human extends FlxSprite {
 
 	public function infect() {
 		isInfected = true;
+
+		speed -= 20;
+		runSpeed -= 20;
+
+		emitter.start(false, 0.05);
+		sicknessTimer.start(30, cure);
+
+		sicknessEffectsInterval.start(3, function(_) doDamage(1), 0); // virus debuffs are applied every 3 seconds (for now only damage is felt)
+	}
+
+	public function cure(_) {
+		isInfected = false;
+		isImmune = true;
+
+		speed = BASE_SPEED;
+		runSpeed = BASE_RUNSPEED;
+
+		emitter.emitting = false;
+		sicknessEffectsInterval.cancel();
+
+		immunityTimer.start(FlxG.random.int(5, 20),
+		function(_) isImmune = false); // once a person is cured from the virus it becomes immune to it for some time
+	}
+
+	public function doDamage(_damageAmount:Float) {
+		health -= _damageAmount;
+
+		setColorTransform(1, 1, 1, 1, 255, 255, 255); // makes the sprite white
+		var feedback = new FlxTimer().start(0.05,
+		function(_) setColorTransform()); // starts a timer that changes the sprite back to the original color after n seconds
+
+		if (health < 0)
+			kill();
+	}
+
+	override function kill() {
+		emitter.emitting = false; // otherwise the emitter will keep emitting from where the body was prior to being killed
+		super.kill();
 	}
 }
