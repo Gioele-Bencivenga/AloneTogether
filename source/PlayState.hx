@@ -1,5 +1,9 @@
 package;
 
+import flixel.util.FlxTimer;
+import openfl.ui.GameInputControl;
+import flixel.util.FlxColor;
+import flixel.FlxCamera;
 import flixel.effects.particles.FlxParticle;
 import flixel.effects.particles.FlxEmitter;
 import flixel.math.FlxMath;
@@ -17,7 +21,7 @@ class PlayState extends FlxState {
 	var player:Player;
 	var coins:FlxTypedGroup<Coin>; // group of coins
 	var npcs:FlxTypedGroup<NPC>; // group of npcs
-	var actors:FlxGroup; // group of npcs + player
+	var actors:FlxTypedGroup<Human>; // group of npcs + player
 
 	var emitters:FlxTypedGroup<FlxEmitter>; // group of emitters
 
@@ -26,6 +30,13 @@ class PlayState extends FlxState {
 	var groundLayer:FlxTilemap;
 	var buildingsLayer:FlxTilemap;
 	var rooftopsLayer:FlxTilemap;
+
+	var hud:HUD;
+
+	var gameCamera:FlxCamera;
+	var hudCamera:FlxCamera;
+
+	var npcDetectionTimer:FlxTimer;
 
 	override public function create():Void {
 		/// TILEMAP STUFF
@@ -43,7 +54,7 @@ class PlayState extends FlxState {
 		/// COIN STUFF
 		coins = new FlxTypedGroup<Coin>();
 		add(coins);
-		
+
 		/// VIRUS STUFF
 		emitters = new FlxTypedGroup<FlxEmitter>();
 		add(emitters);
@@ -57,25 +68,44 @@ class PlayState extends FlxState {
 		add(player);
 		add(player.emitter);
 		emitters.add(player.emitter);
-		
+
 		/// ACTOR STUFF
-		actors = new FlxGroup();
+		actors = new FlxTypedGroup<Human>();
 		actors.add(player);
-		actors.add(npcs);
 
 		/// ENTITIES STUFF
 		map.loadEntities(placeEntities, "entities");
-		
+
 		npcs.getRandom().infect();
-		
+
 		// we put the rooftops after the player so they get rendered in front of it
 		rooftopsLayer = map.loadTilemap(AssetPaths.tilemap_packed__png, "rooftops");
 		add(rooftopsLayer);
 
 		/// CAMERA STUFF
-		collisionsLayer.follow(); // lock the camera to the wall map edges
-		FlxG.camera.follow(player, FlxCameraFollowStyle.LOCKON);
-		FlxG.camera.zoom = 2.5;
+		gameCamera = new FlxCamera(0, 0, FlxG.width, FlxG.height);
+		gameCamera.bgColor = FlxColor.TRANSPARENT;
+		collisionsLayer.follow(gameCamera); // lock the camera to the wall map edges
+		gameCamera.follow(player, FlxCameraFollowStyle.LOCKON);
+		gameCamera.zoom = 2.4;
+		FlxG.cameras.add(gameCamera);
+		// hud camera
+		hudCamera = new FlxCamera(0, 0, FlxG.width, FlxG.height);
+		hudCamera.bgColor = FlxColor.TRANSPARENT;
+		FlxG.cameras.add(hudCamera);
+
+		FlxCamera.defaultCameras = [gameCamera];
+
+		/// HUD STUFF
+		hud = new HUD(player, actors);
+		hud.forEach(function(element) {
+			element.cameras = [hudCamera];
+		});
+		add(hud);
+
+		/// TIMER STUFF
+		npcDetectionTimer = new FlxTimer();
+		npcDetectionTimer.start(1, callNpcDetectMethod, 0);
 
 		super.create();
 	}
@@ -87,6 +117,8 @@ class PlayState extends FlxState {
 		FlxG.collide(actors, actors);
 		// collisions between actors and tilemap
 		FlxG.collide(actors, collisionsLayer);
+		// collisions between germs and tilemap
+		FlxG.collide(emitters, collisionsLayer);
 
 		// overlap between actors and coins
 		FlxG.overlap(actors, coins, humanTouchesCoin);
@@ -95,10 +127,10 @@ class PlayState extends FlxState {
 
 		// pressing period/comma zooms in/out
 		if (FlxG.keys.justPressed.PERIOD) {
-			SetZoom(FlxG.camera.zoom += 0.5);
+			SetZoom(FlxG.camera.zoom += 0.2);
 		}
 		if (FlxG.keys.justPressed.COMMA) {
-			SetZoom(FlxG.camera.zoom -= 0.5);
+			SetZoom(FlxG.camera.zoom -= 0.2);
 		}
 	}
 
@@ -122,6 +154,7 @@ class PlayState extends FlxState {
 				var newNpc = new NPC(entity.x + 4, entity.y + 4, npcSprite);
 				emitters.add(newNpc.emitter);
 				npcs.add(newNpc);
+				actors.add(newNpc);
 		}
 	}
 
@@ -139,7 +172,13 @@ class PlayState extends FlxState {
 		}
 	}
 
+	function callNpcDetectMethod(_) { // called each second by the timer so that NPCs run less into walls
+		for (npc in npcs) {
+			npc.detectSurroundings(collisionsLayer);
+		}
+	}
+
 	private function SetZoom(_zoom:Float) {
-		FlxG.camera.zoom = FlxMath.bound(_zoom, 1.5, 6);
+		gameCamera.zoom = FlxMath.bound(_zoom, 2, 4);
 	}
 }

@@ -1,60 +1,37 @@
 package myClasses;
 
+import flixel.tile.FlxTilemap;
 import flixel.util.FlxTimer;
-import flixel.math.FlxVelocity;
 import flixel.FlxG;
-import flixel.math.FlxPoint;
 
 class NPC extends Human {
-	var brain:FSM;
-	var idleTimer1:Float;
-	var moveDirection:Float;
-
-	var seesHuman:Bool;
-	var humanPosition:FlxPoint;
-
 	var idleTimer:FlxTimer;
+
+	var isUpFree:Bool;
+	var isDownFree:Bool;
+	var isLeftFree:Bool;
+	var isRightFree:Bool;
 
 	public function new(_x:Float = 0, _y:Float = 0, _sprite:String) {
 		super(_x, _y, _sprite);
 
-		// brain = new FSM(idle);
-		// idleTimer1 = 0;
-		// humanPosition = FlxPoint.get();
+		isUpFree = true;
+		isDownFree = true;
+		isLeftFree = true;
+		isRightFree = true;
 
 		idleTimer = new FlxTimer();
 	}
 
 	override function update(elapsed:Float) {
-		// brain.update(elapsed);
 		idle();
 
 		super.update(elapsed);
 	}
 
-	// idle function by rpg tutorial
-
-	/*function idle(elapsed:Float) {
-		if (seesHuman) {
-			brain.activeState = chase;
-		} else if (idleTimer1 <= 0) {
-			if (FlxG.random.bool(1)) {
-				moveDirection = -1;
-				velocity.x = velocity.y = 0;
-			} else {
-				moveDirection = FlxG.random.int(0, 8) * 45;
-
-				velocity.set(speed, 0);
-				velocity.rotate(FlxPoint.weak(), moveDirection);
-			}
-			idleTimer1 = FlxG.random.int(1, 4);
-		} else
-			idleTimer1 -= elapsed;
-	}*/
-
 	function idle() {
-		if(!idleTimer.active){
-			idleTimer.start(FlxG.random.int(1, 3), MoveInRandomDirection);
+		if (!idleTimer.active) {
+			idleTimer.start(FlxG.random.float(0.5, 2.5), MoveInRandomDirection);
 		}
 	}
 
@@ -66,39 +43,75 @@ class NPC extends Human {
 
 		var currXDir = FlxG.random.getObject(["left", "right"]);
 		var currYDir = FlxG.random.getObject(["up", "down"]);
+		if (!isLeftFree) {
+			currXDir = "right";
+		} else if (!isRightFree) {
+			currXDir = "left";
+		} else if (!isLeftFree && !isRightFree) {
+			currXDir = "none";
+		}
+		if (!isUpFree) {
+			currYDir = "down";
+		} else if (!isDownFree) {
+			currYDir = "up";
+		} else if (!isUpFree && !isDownFree) {
+			currYDir = "none";
+		}
 
-		var maxWalkTime:Float = 2;
+		var maxWalkTime:Float = FlxG.random.float(0.5, 3.5);
+		if (FlxG.random.bool(20)) { // chance of running instead of walking
+			running = true;
+		}
 
 		if (currXDir == "left") {
 			left = true;
-			leftTimer.start(FlxG.random.float(0, maxWalkTime), function(_) left = false);
-
-			if (currYDir == "up") {
-				up = true;
-				upTimer.start(FlxG.random.float(0, maxWalkTime), function(_) up = false);
-			} else if (currYDir == "down") {
-				down = true;
-				downTimer.start(FlxG.random.float(0, maxWalkTime), function(_) down = false);
-			}
+			leftTimer.start(FlxG.random.float(0, maxWalkTime), function(_) {
+				left = false;
+				running = false;
+			});
 		} else if (currXDir == "right") {
 			right = true;
-			rightTimer.start(FlxG.random.float(0, maxWalkTime), function(_) right = false);
-
-			if (currYDir == "up") {
-				up = true;
-				upTimer.start(FlxG.random.float(0, maxWalkTime), function(_) up = false);
-			} else if (currYDir == "down") {
-				down = true;
-				downTimer.start(FlxG.random.float(0, maxWalkTime), function(_) down = false);
-			}
+			rightTimer.start(FlxG.random.float(0, maxWalkTime), function(_) {
+				right = false;
+				running = false;
+			});
+		}
+		if (currYDir == "up") {
+			up = true;
+			upTimer.start(FlxG.random.float(0, maxWalkTime), function(_) {
+				up = false;
+				running = false;
+			});
+		} else if (currYDir == "down") {
+			down = true;
+			downTimer.start(FlxG.random.float(0, maxWalkTime), function(_){
+				down = false;
+				running = false;
+			});
 		}
 	}
 
-	/*function chase(elapsed:Float) {
-		if (!seesHuman) {
-			brain.activeState = idle;
+	public function detectSurroundings(_tilemap:FlxTilemap) {
+		var viewLenght = 45;
+		if (_tilemap.ray(getPosition(), getPosition().add(viewLenght, 0))) {
+			isRightFree = true;
 		} else {
-			FlxVelocity.moveTowardsPoint(this, humanPosition, Std.int(runSpeed));
+			isRightFree = false;
 		}
-	}*/
+		if (_tilemap.ray(getPosition(), getPosition().subtract(viewLenght, 0))) {
+			isLeftFree = true;
+		} else {
+			isLeftFree = false;
+		}
+		if (_tilemap.ray(getPosition(), getPosition().add(0, viewLenght))) {
+			isDownFree = true;
+		} else {
+			isDownFree = false;
+		}
+		if (_tilemap.ray(getPosition(), getPosition().subtract(0, viewLenght))) {
+			isUpFree = true;
+		} else {
+			isUpFree = false;
+		}
+	}
 }

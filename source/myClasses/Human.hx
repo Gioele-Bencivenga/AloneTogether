@@ -1,5 +1,6 @@
 package myClasses;
 
+import flixel.tile.FlxTilemap;
 import flixel.util.FlxTimer;
 import flixel.FlxG;
 import flixel.util.FlxColor;
@@ -9,8 +10,10 @@ import flixel.math.FlxPoint;
 import flixel.FlxSprite;
 
 class Human extends FlxSprite {
-	static inline final BASE_SPEED = 80;
-	static inline final BASE_RUNSPEED = 120;
+	static final BASE_SPEED = 80;
+	static final BASE_RUNSPEED = 120;
+
+	public final MAX_HEALTH = 30;
 
 	var speed:Float;
 	var runSpeed:Float;
@@ -37,7 +40,7 @@ class Human extends FlxSprite {
 	public function new(_x:Float, _y:Float, _sprite:String) {
 		super(_x, _y);
 
-		health = FlxG.random.int(5, 20);
+		health = FlxG.random.int(5, 30);
 		speed = BASE_SPEED;
 		runSpeed = BASE_RUNSPEED;
 		isInfected = false;
@@ -58,12 +61,13 @@ class Human extends FlxSprite {
 		/// EMITTER
 		emitter = new FlxEmitter(x, y);
 		emitter.solid = true; // you need this for overlap checks to work!
+		emitter.allowCollisions = FlxObject.ANY;
 		emitter.makeParticles(2, 2, FlxColor.PURPLE, 1000);
 		emitter.color.set(FlxColor.PURPLE, FlxColor.MAGENTA);
 		germAlpha = FlxG.random.float(0.1, 0.5);
 		emitter.alpha.set(germAlpha, germAlpha, 0, 0.1);
-		germLifespan = FlxG.random.int(7, 15);
-		emitter.lifespan.set(germLifespan - 6, germLifespan);
+		germLifespan = FlxG.random.int(10, 30);
+		emitter.lifespan.set(germLifespan - 9, germLifespan);
 		emitter.drag.set(1);
 		emitter.speed.set(6, 10);
 		emitter.launchMode = FlxEmitterMode.CIRCLE;
@@ -126,15 +130,17 @@ class Human extends FlxSprite {
 
 			// if the player is moving (velocity is not 0 for either axis), we change the animation to match their facing
 			if (velocity.x != 0 || velocity.y != 0) {
-				switch (facing) {
-					case FlxObject.LEFT:
-						animation.play("walkLeft");
-					case FlxObject.RIGHT:
-						animation.play("walkRight");
-					case FlxObject.UP:
-						animation.play("walkUp");
-					case FlxObject.DOWN:
-						animation.play("walkDown");
+				if (facing != touching) {
+					switch (facing) {
+						case FlxObject.LEFT:
+							animation.play("walkLeft");
+						case FlxObject.RIGHT:
+							animation.play("walkRight");
+						case FlxObject.UP:
+							animation.play("walkUp");
+						case FlxObject.DOWN:
+							animation.play("walkDown");
+					}
 				}
 			}
 		}
@@ -163,15 +169,15 @@ class Human extends FlxSprite {
 		sicknessEffectsInterval.cancel();
 
 		immunityTimer.start(FlxG.random.int(5, 20),
-		function(_) isImmune = false); // once a person is cured from the virus it becomes immune to it for some time
+			function(_) isImmune = false); // once a person is cured from the virus it becomes immune to it for some time
 	}
 
 	public function doDamage(_damageAmount:Float) {
 		health -= _damageAmount;
 
-		setColorTransform(1, 1, 1, 1, 255, 255, 255); // makes the sprite white
-		var feedback = new FlxTimer().start(0.05,
-		function(_) setColorTransform()); // starts a timer that changes the sprite back to the original color after n seconds
+		setColorTransform(1, 1, 1, 1, 255, 0, 0); // colors the sprite
+		var feedback = new FlxTimer().start(0.1,
+			function(_) setColorTransform()); // starts a timer that changes the sprite back to the original color after n seconds
 
 		if (health < 0)
 			kill();
