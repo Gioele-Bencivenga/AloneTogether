@@ -3,11 +3,14 @@ package myClasses;
 import flixel.FlxG;
 
 class Player extends Human {
+	public function new() {
+		super();
+	}
 
-	var sprite:String = AssetPaths.bobert__png;
+	override public function initialize(_x:Float, _y:Float, ?_sprite:String) {
+		super.initialize(_x, _y, _sprite);
 
-	public function new(_x:Float = 0, _y:Float = 0) {
-		super(_x, _y, sprite);
+		health = 35;
 	}
 
 	override function update(elapsed:Float) {
@@ -22,5 +25,11 @@ class Player extends Human {
 		left = FlxG.keys.anyPressed([LEFT, A]);
 		right = FlxG.keys.anyPressed([RIGHT, D]);
 		running = FlxG.keys.anyPressed([SHIFT, Z]);
+	}
+
+	override function doDamage(_damageAmount:Float) {
+		FlxG.cameras.shake(0.003, 0.1);
+
+		super.doDamage(_damageAmount);
 	}
 }

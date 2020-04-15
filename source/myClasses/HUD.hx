@@ -20,6 +20,7 @@ class HUD extends FlxTypedGroup<FlxSprite> {
 
 	var txtHealth:FlxText;
 	var txtInfected:FlxText;
+	var txtCoins:FlxText;
 
 	var healthBar:FlxBar;
 	var barWidth:Int;
@@ -60,14 +61,17 @@ class HUD extends FlxTypedGroup<FlxSprite> {
 		txtInfected = new FlxText(FlxG.width - 300, background.y + 5, 400, " ", 25);
 		add(txtInfected);
 
+		txtCoins = new FlxText(5, background.y + 5, 160, " ", 25);
+		add(txtCoins);
+
 		// we call the function on each element, by setting scrollFactor to 0,0 the elements won't scroll based on camera movements
 		forEach(function(el:FlxSprite) {
 			el.scrollFactor.set(0, 0);
 		});
 
-		/// REFRESH TIMER
+		/// HUD REFRESH TIMER
 		refreshTimer = new FlxTimer();
-		refreshTimer.start(1, function(_) {
+		refreshTimer.start(0.5, function(_) {
 			updateInfectedNumber();
 			updateHUD();
 		}, 0);
@@ -76,14 +80,16 @@ class HUD extends FlxTypedGroup<FlxSprite> {
 	public function updateHUD() {
 		txtHealth.text = 'HP: ${player.health}/${player.MAX_HEALTH}';
 
-		txtInfected.text = 'INFECTED: ${nOfInfected} / ${actors.countLiving()}'; // fix this
+		txtInfected.text = 'INFECTED: ${nOfInfected} / ${actors.countLiving()}';
+
+		txtCoins.text = 'COINS: ${player.coinAmount}';
 	}
 
 	// need timer to run this function
 	function updateInfectedNumber() {
 		var i = 0;
 		for (actor in actors) {
-			if (actor.isInfected) {
+			if(actor.alive && actor.exists && actor.isInfected){
 				i++;
 			}
 		}

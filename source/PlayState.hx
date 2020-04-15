@@ -20,10 +20,13 @@ import myClasses.*;
 class PlayState extends FlxState {
 	var player:Player;
 	var coins:FlxTypedGroup<Coin>; // group of coins
-	var npcs:FlxTypedGroup<NPC>; // group of npcs
-	var actors:FlxTypedGroup<Human>; // group of npcs + player
 
-	var emitters:FlxTypedGroup<FlxEmitter>; // group of emitters
+	public static var npcs:FlxTypedGroup<NPC>; // group of npcs
+	public static var actors:FlxTypedGroup<Human>; // group of npcs + player
+
+	var spawners:FlxTypedGroup<NPCSpawner>;
+
+	public static var emitters:FlxTypedGroup<FlxEmitter>; // group of emitters
 
 	var map:FlxOgmo3Loader;
 	var collisionsLayer:FlxTilemap;
@@ -65,6 +68,7 @@ class PlayState extends FlxState {
 
 		/// PLAYER STUFF
 		player = new Player();
+		player.initialize(0, 0);
 		add(player);
 		add(player.emitter);
 		emitters.add(player.emitter);
@@ -72,6 +76,9 @@ class PlayState extends FlxState {
 		/// ACTOR STUFF
 		actors = new FlxTypedGroup<Human>();
 		actors.add(player);
+
+		/// SPAWNER
+		spawners = new FlxTypedGroup<NPCSpawner>();
 
 		/// ENTITIES STUFF
 		map.loadEntities(placeEntities, "entities");
@@ -114,7 +121,7 @@ class PlayState extends FlxState {
 		super.update(elapsed);
 
 		// collisions between actors
-		FlxG.collide(actors, actors);
+		FlxG.collide(actors, actors, humanTouchesHuman);
 		// collisions between actors and tilemap
 		FlxG.collide(actors, collisionsLayer);
 		// collisions between germs and tilemap
@@ -140,34 +147,49 @@ class PlayState extends FlxState {
 				player.setPosition(entity.x, entity.y);
 
 			case "coin": // we add the coin in the ogmo project to our coins group, the +4 is to center the coin in the middle of the tile
-				coins.add(new Coin(entity.x + 4, entity.y + 4));
+				var newCoin = new Coin();
+				newCoin.initialize(entity.x + 4, entity.y + 4);
+				emitters.add(newCoin.emitter);
+				coins.add(newCoin);
 
-			case "denizen":
-				var npcSprite = FlxG.random.getObject([
-					AssetPaths.bob__png,
-					AssetPaths.boba__png,
-					AssetPaths.bobby__png,
-					AssetPaths.bobert__png,
-					AssetPaths.bobesha__png,
-					AssetPaths.bobunter__png
-				]);
-				var newNpc = new NPC(entity.x + 4, entity.y + 4, npcSprite);
+			case "npc":
+				var newNpc = new NPC();
+				newNpc.initialize(entity.x + 4, entity.y + 4);
 				emitters.add(newNpc.emitter);
 				npcs.add(newNpc);
 				actors.add(newNpc);
+
+			case "spawner":
+				spawners.add(new NPCSpawner(entity.x, entity.y));
 		}
 	}
 
 	function humanTouchesCoin(_actor:Human, _coin:Coin) {
 		if (_actor.alive && _actor.exists && _coin.alive && _coin.exists) {
 			_coin.kill();
+			_actor.gainCoin(1);
 		}
 	}
 
 	function humanTouchesVirus(_actor:Human, _emitter:FlxEmitter) {
 		if (_actor.alive && _actor.exists && _emitter.alive && _emitter.exists) {
 			if (!_actor.isInfected && !_actor.isImmune) {
-				_actor.infect();
+				_actor.chanceToInfect();
+			}
+		}
+	}
+
+	function humanTouchesHuman(_actor1:Human, _actor2:Human) {
+		if (_actor1.alive && _actor1.exists && _actor2.alive && _actor2.exists) {
+			if (_actor1.isInfected) {
+				if (!_actor2.isInfected && !_actor2.isImmune) {
+					_actor2.chanceToInfect();
+				}
+			}
+			if (_actor2.isInfected) {
+				if (!_actor1.isInfected && !_actor1.isImmune) {
+					_actor1.chanceToInfect();
+				}
 			}
 		}
 	}

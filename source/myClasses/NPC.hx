@@ -12,15 +12,23 @@ class NPC extends Human {
 	var isLeftFree:Bool;
 	var isRightFree:Bool;
 
-	public function new(_x:Float = 0, _y:Float = 0, _sprite:String) {
-		super(_x, _y, _sprite);
+	var viewLenght:Int;
+
+	public function new() {
+		super();
+
+		idleTimer = new FlxTimer();
+	}
+
+	override public function initialize(_x:Float, _y:Float, ?_sprite:String) {
+		super.initialize(_x, _y, _sprite);
 
 		isUpFree = true;
 		isDownFree = true;
 		isLeftFree = true;
-		isRightFree = true;
-
-		idleTimer = new FlxTimer();
+		isRightFree = true;	
+		
+		viewLenght = 55;
 	}
 
 	override function update(elapsed:Float) {
@@ -84,7 +92,7 @@ class NPC extends Human {
 			});
 		} else if (currYDir == "down") {
 			down = true;
-			downTimer.start(FlxG.random.float(0, maxWalkTime), function(_){
+			downTimer.start(FlxG.random.float(0, maxWalkTime), function(_) {
 				down = false;
 				running = false;
 			});
@@ -92,7 +100,6 @@ class NPC extends Human {
 	}
 
 	public function detectSurroundings(_tilemap:FlxTilemap) {
-		var viewLenght = 45;
 		if (_tilemap.ray(getPosition(), getPosition().add(viewLenght, 0))) {
 			isRightFree = true;
 		} else {
