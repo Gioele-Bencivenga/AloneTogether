@@ -24,8 +24,9 @@ class Coin extends FlxSprite {
 
 		/// EMITTER
 		emitter.color.set(FlxColor.YELLOW, FlxColor.ORANGE, FlxColor.WHITE, FlxColor.YELLOW);
+		emitter.alpha.set(1, 1, 0, 0.3);
 		emitter.lifespan.set(0.1, 0.4);
-		emitter.speed.set(0, 150);
+		emitter.speed.set(50, 200);
 		emitter.angularVelocity.set(-500, 500);
 		emitter.launchMode = FlxEmitterMode.CIRCLE;
 	}

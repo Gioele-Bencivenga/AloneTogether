@@ -1,5 +1,6 @@
 package;
 
+import openfl.filters.ShaderFilter;
 import flixel.util.FlxTimer;
 import openfl.ui.GameInputControl;
 import flixel.util.FlxColor;
@@ -25,22 +26,23 @@ class PlayState extends FlxState {
 	public static var actors:FlxTypedGroup<Human>; // group of npcs + player
 
 	var spawners:FlxTypedGroup<NPCSpawner>;
-
+	
 	public static var emitters:FlxTypedGroup<FlxEmitter>; // group of emitters
-
+	
 	var map:FlxOgmo3Loader;
 	var collisionsLayer:FlxTilemap;
 	var groundLayer:FlxTilemap;
 	var buildingsLayer:FlxTilemap;
 	var rooftopsLayer:FlxTilemap;
-
+	
 	var hud:HUD;
-
+	
 	var gameCamera:FlxCamera;
 	var hudCamera:FlxCamera;
-
+	var shaderCamera:FlxCamera;
+	
 	var npcDetectionTimer:FlxTimer;
-
+	
 	override public function create():Void {
 		/// TILEMAP STUFF
 		map = new FlxOgmo3Loader(AssetPaths.cityTilemap__ogmo, AssetPaths.city1__json);
@@ -53,11 +55,24 @@ class PlayState extends FlxState {
 		add(groundLayer);
 		buildingsLayer = map.loadTilemap(AssetPaths.tilemap_packed__png, "buildings");
 		add(buildingsLayer);
-
+		
+		/// CAMERA STUFF
+		gameCamera = new FlxCamera(0, 0, FlxG.width, FlxG.height);
+		gameCamera.bgColor = FlxColor.TRANSPARENT;
+		collisionsLayer.follow(gameCamera); // lock the camera to the wall map edges
+		gameCamera.zoom = 2.4;
+		FlxG.cameras.add(gameCamera);
+		// hud camera
+		hudCamera = new FlxCamera(0, 0, FlxG.width, FlxG.height);
+		hudCamera.bgColor = FlxColor.TRANSPARENT;
+		FlxG.cameras.add(hudCamera);
+		
+		FlxCamera.defaultCameras = [gameCamera];
+		
 		/// COIN STUFF
 		coins = new FlxTypedGroup<Coin>();
 		add(coins);
-
+		
 		/// VIRUS STUFF
 		emitters = new FlxTypedGroup<FlxEmitter>();
 		add(emitters);
@@ -65,13 +80,14 @@ class PlayState extends FlxState {
 		/// NPC STUFF
 		npcs = new FlxTypedGroup<NPC>();
 		add(npcs);
-
+		
 		/// PLAYER STUFF
 		player = new Player();
 		player.initialize(0, 0);
 		add(player);
 		add(player.emitter);
 		emitters.add(player.emitter);
+		gameCamera.follow(player, FlxCameraFollowStyle.LOCKON);
 
 		/// ACTOR STUFF
 		actors = new FlxTypedGroup<Human>();
@@ -88,20 +104,6 @@ class PlayState extends FlxState {
 		// we put the rooftops after the player so they get rendered in front of it
 		rooftopsLayer = map.loadTilemap(AssetPaths.tilemap_packed__png, "rooftops");
 		add(rooftopsLayer);
-
-		/// CAMERA STUFF
-		gameCamera = new FlxCamera(0, 0, FlxG.width, FlxG.height);
-		gameCamera.bgColor = FlxColor.TRANSPARENT;
-		collisionsLayer.follow(gameCamera); // lock the camera to the wall map edges
-		gameCamera.follow(player, FlxCameraFollowStyle.LOCKON);
-		gameCamera.zoom = 2.4;
-		FlxG.cameras.add(gameCamera);
-		// hud camera
-		hudCamera = new FlxCamera(0, 0, FlxG.width, FlxG.height);
-		hudCamera.bgColor = FlxColor.TRANSPARENT;
-		FlxG.cameras.add(hudCamera);
-
-		FlxCamera.defaultCameras = [gameCamera];
 
 		/// HUD STUFF
 		hud = new HUD(player, actors);

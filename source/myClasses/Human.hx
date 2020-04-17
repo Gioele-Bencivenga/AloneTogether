@@ -1,5 +1,6 @@
 package myClasses;
 
+import flixel.effects.particles.FlxParticle;
 import flixel.tile.FlxTilemap;
 import flixel.util.FlxTimer;
 import flixel.FlxG;
@@ -49,7 +50,7 @@ class Human extends FlxSprite {
 
 		/// EMITTER
 		emitter = new FlxEmitter(x, y);
-		emitter.makeParticles(3, 3, FlxColor.PURPLE, 400);
+		emitter.loadParticles(AssetPaths.virusSprite__png, 400);
 
 		/// TIMER
 		healthRegenTimer = new FlxTimer();
@@ -96,14 +97,13 @@ class Human extends FlxSprite {
 		/// EMITTER
 		emitter.solid = true; // you need this for overlap checks to work!
 		emitter.allowCollisions = FlxObject.ANY;
-		emitter.color.set(FlxColor.PURPLE, FlxColor.MAGENTA);
-		germAlpha = FlxG.random.float(0.3, 0.6);
-		emitter.alpha.set(germAlpha, germAlpha, 0, 0.1);
+		emitter.color.set(FlxColor.PURPLE, FlxColor.MAGENTA, FlxColor.YELLOW, FlxColor.GREEN);
+		germAlpha = FlxG.random.float(0.2, 0.5);
+		emitter.alpha.set(germAlpha, germAlpha, 0);
 		germLifespan = FlxG.random.int(15, 35);
 		emitter.lifespan.set(germLifespan - 15, germLifespan);
 		emitter.drag.set(2);
 		emitter.speed.set(0, 15);
-		emitter.angularVelocity.set(-500, 500);
 		emitter.launchMode = FlxEmitterMode.CIRCLE;
 
 		/// HITBOX
@@ -230,7 +230,7 @@ class Human extends FlxSprite {
 	}
 
 	function heal(_healthAmount:Float) {
-		if(health < MAX_HEALTH){
+		if (health < MAX_HEALTH) {
 			health += _healthAmount;
 			trace("Healed");
 		}
