@@ -43,7 +43,7 @@ class Coin extends FlxSprite {
 			y: y - randY,
 			angle: angle - randAngle
 		}, 0.50, {
-			ease: FlxEase.circOut,
+			ease: FlxEase.expoOut,
 			onComplete: function(_) {
 				emitter.focusOn(this);
 				emitter.start();

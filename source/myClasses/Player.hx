@@ -10,7 +10,7 @@ class Player extends Human {
 	override public function initialize(_x:Float, _y:Float, ?_sprite:String) {
 		super.initialize(_x, _y, _sprite);
 
-		health = 35;
+		health = 5;
 	}
 
 	override function update(elapsed:Float) {
@@ -25,6 +25,9 @@ class Player extends Human {
 		left = FlxG.keys.anyPressed([LEFT, A]);
 		right = FlxG.keys.anyPressed([RIGHT, D]);
 		running = FlxG.keys.anyPressed([SHIFT, Z]);
+		j = FlxG.keys.anyJustReleased([J, C]);
+		k = FlxG.keys.anyJustReleased([K, X]);
+		l = FlxG.keys.anyJustReleased([L, Z]);
 	}
 
 	override function doDamage(_damageAmount:Float) {

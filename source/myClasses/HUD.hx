@@ -39,7 +39,7 @@ class HUD extends FlxTypedGroup<FlxSprite> {
 		actors = _actors;
 
 		backgroundHeight = 40;
-		backgroundColor = FlxColor.fromRGB(0, 0, 255, 110);
+		backgroundColor = FlxColor.fromRGB(0, 0, 225, 200);
 		dividerHeight = 2;
 		dividerColor = FlxColor.fromRGB(0, 0, 255, 255);
 
@@ -61,7 +61,7 @@ class HUD extends FlxTypedGroup<FlxSprite> {
 		txtInfected = new FlxText(FlxG.width - 300, background.y + 5, 400, " ", 25);
 		add(txtInfected);
 
-		txtCoins = new FlxText(5, background.y + 5, 160, " ", 25);
+		txtCoins = new FlxText(5, background.y + 5, 200, " ", 25);
 		add(txtCoins);
 
 		// we call the function on each element, by setting scrollFactor to 0,0 the elements won't scroll based on camera movements
@@ -82,7 +82,8 @@ class HUD extends FlxTypedGroup<FlxSprite> {
 
 		txtInfected.text = 'INFECTED: ${nOfInfected} / ${actors.countLiving()}';
 
-		txtCoins.text = 'COINS: ${player.coinAmount}';
+		//txtCoins.text = 'COINS: ${player.coinAmount}';
+		txtCoins.text = 'CHANCE: ${player.infectionChance}';
 	}
 
 	// need timer to run this function
