@@ -32,6 +32,7 @@ class PlayState extends FlxState {
 	var map:FlxOgmo3Loader;
 	var collisionsLayer:FlxTilemap;
 	var groundLayer:FlxTilemap;
+	var objectsLayer:FlxTilemap;
 	var buildingsLayer:FlxTilemap;
 	var rooftopsLayer:FlxTilemap;
 
@@ -49,11 +50,17 @@ class PlayState extends FlxState {
 		collisionsLayer = map.loadTilemap(AssetPaths.tiles__png, "collisions");
 		collisionsLayer.setTileProperties(1, FlxObject.NONE);
 		collisionsLayer.setTileProperties(2, FlxObject.ANY);
+		collisionsLayer.useScaleHack = false;
 		collisionsLayer.immovable = true;
 		add(collisionsLayer);
 		groundLayer = map.loadTilemap(AssetPaths.tilemap_packed__png, "ground");
+		groundLayer.useScaleHack = false;
 		add(groundLayer);
+		objectsLayer = map.loadTilemap(AssetPaths.tilemap_packed__png, "objects");
+		objectsLayer.useScaleHack = false;
+		add(objectsLayer);
 		buildingsLayer = map.loadTilemap(AssetPaths.tilemap_packed__png, "buildings");
+		buildingsLayer.useScaleHack = false;
 		add(buildingsLayer);
 
 		/// CAMERA STUFF
@@ -101,10 +108,13 @@ class PlayState extends FlxState {
 		/// ENTITIES STUFF
 		map.loadEntities(placeEntities, "entities");
 
-		npcs.getRandom().infect();
+		for(i in 0...3){
+			npcs.getRandom().infect();
+		}
 
 		// we put the rooftops after the player so they get rendered in front of it
 		rooftopsLayer = map.loadTilemap(AssetPaths.tilemap_packed__png, "rooftops");
+		rooftopsLayer.useScaleHack = false;
 		add(rooftopsLayer);
 
 		/// HUD STUFF
@@ -154,7 +164,7 @@ class PlayState extends FlxState {
 				npcs.add(newNpc);
 				actors.add(newNpc);
 
-			case "spawner":
+			case "npcSpawner":
 				spawners.add(new NPCSpawner(entity.x, entity.y));
 		}
 	}
@@ -166,9 +176,10 @@ class PlayState extends FlxState {
 		FlxG.collide(actors, actors, humanTouchesHuman);
 		// collisions between actors and tilemap
 		FlxG.collide(actors, collisionsLayer);
-		// collisions between germs and tilemap
-		FlxG.collide(emitters, collisionsLayer);
+		// collisions between items and tilemap
 		FlxG.collide(items, collisionsLayer);
+		// trying to prevent coins from getting stuck inside walls
+		FlxG.collide(coins, collisionsLayer);
 
 		// overlaps between actors and virus
 		FlxG.overlap(actors, emitters, humanTouchesVirus);
@@ -217,8 +228,8 @@ class PlayState extends FlxState {
 		}
 	}
 
-	function humanTouchesVirus(_actor:Human, _emitter:FlxEmitter) {
-		if (_actor.alive && _actor.exists && _emitter.alive && _emitter.exists) {
+	function humanTouchesVirus(_actor:Human, _particle:FlxParticle) {
+		if (_actor.alive && _actor.exists && _particle.alive && _particle.exists) {
 			if (!_actor.isInfected && !_actor.isImmune) {
 				_actor.tryToInfect();
 			}
@@ -247,6 +258,6 @@ class PlayState extends FlxState {
 	}
 
 	private function SetZoom(_zoom:Float) {
-		gameCamera.zoom = FlxMath.bound(_zoom, 2, 4);
+		gameCamera.zoom = FlxMath.bound(_zoom, 1, 4);
 	}
 }

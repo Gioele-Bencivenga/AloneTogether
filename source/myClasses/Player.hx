@@ -10,7 +10,7 @@ class Player extends Human {
 	override public function initialize(_x:Float, _y:Float, ?_sprite:String) {
 		super.initialize(_x, _y, _sprite);
 
-		health = 5;
+		health = 20;
 	}
 
 	override function update(elapsed:Float) {

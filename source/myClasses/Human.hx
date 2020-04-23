@@ -1,5 +1,6 @@
 package myClasses;
 
+import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 import haxe.Timer;
 import flixel.group.FlxGroup.FlxTypedGroup;
@@ -69,7 +70,7 @@ class Human extends FlxSprite {
 
 		/// EMITTER
 		emitter = new FlxEmitter(x, y);
-		emitter.loadParticles(AssetPaths.virusSprite__png, 400);
+		emitter.loadParticles(AssetPaths.virusSprite__png, 200);
 
 		/// TIMER
 		healthRegenTimer = new FlxTimer();
@@ -83,7 +84,11 @@ class Human extends FlxSprite {
 		x = _x;
 		y = _y;
 
-		health = FlxG.random.int(5, 30);
+		if (FlxG.random.bool(80)) {
+			health = FlxG.random.int(35, 40);
+		} else {
+			health = FlxG.random.int(5, 10);
+		}
 		speed = BASE_SPEED;
 		runSpeed = BASE_RUNSPEED;
 		isInfected = false;
@@ -107,6 +112,8 @@ class Human extends FlxSprite {
 		}
 		loadGraphic(_sprite, true, 16, 16);
 		scale.set(1, 1);
+		angle = 0;
+		alpha = 1;
 
 		/// HITBOX
 		setSize(8, 8); // setting hitbox size to half the graphic (also half of the tiles)
@@ -119,20 +126,21 @@ class Human extends FlxSprite {
 		animation.add("walkDown", [3, 4, 3, 5], 6, false);
 
 		/// EMITTER
-		emitter.solid = true; // you need this for overlap checks to work!
-		emitter.allowCollisions = FlxObject.ANY;
+		emitter.allowCollisions = FlxObject.ANY; // you need this for overlap checks to work!
 		emitter.color.set(FlxColor.PURPLE, FlxColor.MAGENTA, FlxColor.YELLOW, FlxColor.GREEN);
-		germAlpha = FlxG.random.float(0.2, 0.5);
-		emitter.alpha.set(germAlpha, germAlpha, 0);
-		germLifespan = FlxG.random.int(15, 35);
-		emitter.lifespan.set(germLifespan - 15, germLifespan);
-		emitter.drag.set(2);
-		maxGermSpeed = 22;
+		germAlpha = FlxG.random.float(0.2, 0.4);
+		emitter.alpha.set(germAlpha - 0.1, germAlpha, 0);
+		emitter.lifespan.set(2, 25);
+		emitter.drag.set(1);
+		maxGermSpeed = 20;
 		emitter.speed.set(5, maxGermSpeed);
 		emitter.launchMode = FlxEmitterMode.CIRCLE;
+		emitter.scale.set(1, 1, 1, 1, 1.5, 1.5, 4, 4);
 
 		/// HEALTH REGEN
-		healthRegenTimer.start(13, function(_) heal(1), 0);
+		healthRegenTimer.start(10, function(_) heal(1), 0);
+
+		coinAmount = 20;
 	}
 
 	override function update(elapsed:Float) {
@@ -235,7 +243,23 @@ class Human extends FlxSprite {
 	}
 
 	public function gainCoin(_amountGained:Int) {
-		coinAmount += _amountGained;
+		if (canPickUp) {
+			coinAmount += _amountGained;
+		}
+	}
+
+	function dropCoins(_amount:Int) {
+		coinAmount -= _amount;
+		for (i in 0..._amount) {
+			var newCoin = PlayState.coins.recycle(Coin.new);
+			newCoin.initialize(x, y);
+			PlayState.coins.add(newCoin);
+
+			var maxVel = 100;
+			newCoin.velocity.set(FlxG.random.float(-maxVel, maxVel), FlxG.random.float(-maxVel, maxVel));
+		}
+		canPickUp = false;
+		var t = new FlxTimer().start(0.2, function(_) canPickUp = true);
 	}
 
 	public function equipItem(_item:Item) {
@@ -252,16 +276,16 @@ class Human extends FlxSprite {
 				infect();
 			}
 			canBeInfected = false;
-			var t = new FlxTimer().start(1, function(_) canBeInfected = true);
+			var t = new FlxTimer().start(0.7, function(_) canBeInfected = true);
 		}
 	}
 
 	public function infect() {
 		isInfected = true;
 
-		emitter.start(false, 0.5);
+		emitter.start(false, 0.4);
 
-		sicknessTimer.start(30, cure);
+		sicknessTimer.start(35, cure);
 		sicknessEffectsInterval.start(5, function(_) doDamage(4), 0); // virus debuffs are applied every 3 seconds (for now only damage is felt)
 	}
 
@@ -299,7 +323,14 @@ class Human extends FlxSprite {
 	}
 
 	function myKill() {
+		alive = false;
+
 		unEquipItems();
+		dropCoins(coinAmount);
+
+		sicknessTimer.cancel();
+		sicknessEffectsInterval.cancel();
+		emitter.emitting = false; // otherwise the emitter will keep emitting from where the body was prior to being killed
 
 		up = left = right = down = false; // we stop current movement
 
@@ -313,12 +344,6 @@ class Human extends FlxSprite {
 		}, 0.5, {onComplete: function(_) kill()});
 	}
 
-	override function kill() {
-		emitter.emitting = false; // otherwise the emitter will keep emitting from where the body was prior to being killed
-
-		super.kill();
-	}
-
 	function unEquipItems() {
 		for (i in 0...items.members.length) {
 			if (items.members[i] != null) {
@@ -326,5 +351,8 @@ class Human extends FlxSprite {
 				items.members[i] = null;
 			}
 		}
+
+		canPickUp = false;
+		var t = new FlxTimer().start(1, function(_) canPickUp = true);
 	}
 }

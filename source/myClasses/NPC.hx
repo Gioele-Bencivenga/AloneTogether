@@ -28,7 +28,7 @@ class NPC extends Human {
 		isLeftFree = true;
 		isRightFree = true;	
 		
-		viewLenght = 55;
+		viewLenght = 60;
 	}
 
 	override function update(elapsed:Float) {
@@ -66,7 +66,7 @@ class NPC extends Human {
 			currYDir = "none";
 		}
 
-		var maxWalkTime:Float = FlxG.random.float(0.5, 3.5);
+		var maxWalkTime:Float = FlxG.random.float(0.5, 5.5);
 		if (FlxG.random.bool(20)) { // chance of running instead of walking
 			running = true;
 		}

@@ -78,7 +78,7 @@ class Item extends FlxSprite {
 		scale.set(0.7, 0.7);
 		updateHitbox();
 
-		uprightTimer = new FlxTimer().start(1, function(_) {
+		uprightTimer = new FlxTimer().start(1.5, function(_) {
 			if (angle != 0) {
 				FlxTween.tween(this, {angle: 0}, 0.5);
 			}
@@ -101,14 +101,14 @@ class Item extends FlxSprite {
 			FlxTween.tween(this.scale, {
 				x: 1.5,
 				y: 1,
-			}, 0.20, {
+			}, 0.15, {
 				ease: FlxEase.expoOut,
 			}).then(FlxTween.tween(this, {
 				angle: angle + 360,
-			}, 0.25).then(FlxTween.tween(this.scale, {
+			}, 0.20).then(FlxTween.tween(this.scale, {
 					x: 0.7,
 					y: 0.7
-				}, 0.20, {
+				}, 0.15, {
 					ease: FlxEase.expoOut,
 				})));
 		}

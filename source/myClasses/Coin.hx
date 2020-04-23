@@ -22,6 +22,9 @@ class Coin extends FlxSprite {
 		x = _x;
 		y = _y;
 
+		angle = 0;
+		drag.x = drag.y = 50;
+
 		/// EMITTER
 		emitter.color.set(FlxColor.YELLOW, FlxColor.ORANGE, FlxColor.WHITE, FlxColor.YELLOW);
 		emitter.alpha.set(1, 1, 0, 0.3);
@@ -34,8 +37,8 @@ class Coin extends FlxSprite {
 	override function kill() {
 		alive = false;
 
-		var randX = FlxG.random.int(-5, 5);
-		var randY = FlxG.random.int(15, 30);
+		var randX = FlxG.random.int(-10, 10);
+		var randY = FlxG.random.int(20, 45);
 		var randAngle = FlxG.random.int(500, 1000);
 
 		FlxTween.tween(this, {

@@ -18,7 +18,7 @@ class NPCSpawner extends FlxSprite {
 	}
 
 	function spawnNPC(_) {
-		if(FlxG.random.bool(50)){
+		if(FlxG.random.bool(15)){
 			var newNpc = PlayState.npcs.recycle(NPC.new);
 			newNpc.initialize(x, y);
 			PlayState.npcs.add(newNpc);
