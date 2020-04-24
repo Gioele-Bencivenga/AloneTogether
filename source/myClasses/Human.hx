@@ -24,6 +24,8 @@ class Human extends FlxSprite {
 	var speed:Float;
 	var runSpeed:Float;
 
+	var canMove:Bool; // flag used to decide if updateMovemement should be called
+
 	var up:Bool = false;
 	var down:Bool = false;
 	var left:Bool = false;
@@ -32,6 +34,7 @@ class Human extends FlxSprite {
 	var j:Bool = false; // variables for chucking items
 	var k:Bool = false;
 	var l:Bool = false;
+	var e:Bool = false;
 
 	var directionAngle:Float;
 
@@ -60,6 +63,8 @@ class Human extends FlxSprite {
 
 	public var canPickUp(default, null):Bool; // flag for determining if objects should be picked up or not
 
+	var pickupTimer:FlxTimer;
+
 	// for things that are only set once
 	public function new() {
 		super();
@@ -70,13 +75,15 @@ class Human extends FlxSprite {
 
 		/// EMITTER
 		emitter = new FlxEmitter(x, y);
-		emitter.loadParticles(AssetPaths.virusSprite__png, 200);
+		emitter.loadParticles(AssetPaths.virusSprite__png, 50);
+		emitter.maxSize = 50;
 
 		/// TIMER
 		healthRegenTimer = new FlxTimer();
 		sicknessTimer = new FlxTimer();
 		immunityTimer = new FlxTimer();
 		sicknessEffectsInterval = new FlxTimer();
+		pickupTimer = new FlxTimer();
 	}
 
 	// for things that need to be set each time we recycle
@@ -95,9 +102,10 @@ class Human extends FlxSprite {
 		isImmune = false;
 		canBeInfected = true;
 		infectionChance = BASE_INFECTIONCHANCE;
-		coinAmount = 0;
+		coinAmount = FlxG.random.int(1, 5);
 		items = new FlxTypedGroup<Item>(3);
 		canPickUp = true;
+		canMove = true;
 
 		/// GRAPHICS
 		if (_sprite == null) {
@@ -128,19 +136,18 @@ class Human extends FlxSprite {
 		/// EMITTER
 		emitter.allowCollisions = FlxObject.ANY; // you need this for overlap checks to work!
 		emitter.color.set(FlxColor.PURPLE, FlxColor.MAGENTA, FlxColor.YELLOW, FlxColor.GREEN);
-		germAlpha = FlxG.random.float(0.2, 0.4);
-		emitter.alpha.set(germAlpha - 0.1, germAlpha, 0);
-		emitter.lifespan.set(2, 25);
+		germAlpha = FlxG.random.float(0.3, 0.5);
+		emitter.alpha.set(germAlpha - 0.1, germAlpha, 0.15);
+		emitter.lifespan.set(1, 30);
 		emitter.drag.set(1);
-		maxGermSpeed = 20;
+		maxGermSpeed = 30;
 		emitter.speed.set(5, maxGermSpeed);
 		emitter.launchMode = FlxEmitterMode.CIRCLE;
-		emitter.scale.set(1, 1, 1, 1, 1.5, 1.5, 4, 4);
+		emitter.scale.set(1, 1, 1, 1, 1.5, 1.5, 3.5, 3.5);
+		emitter.autoUpdateHitbox = true;
 
 		/// HEALTH REGEN
 		healthRegenTimer.start(10, function(_) heal(1), 0);
-
-		coinAmount = 20;
 	}
 
 	override function update(elapsed:Float) {
@@ -153,46 +160,46 @@ class Human extends FlxSprite {
 	}
 
 	function updateMovement() {
-		// opposing directions cancel each other out
-		if (up && down)
-			up = down = false;
-		if (left && right)
-			left = right = false;
+		if (canMove) {
+			// opposing directions cancel each other out
+			if (up && down)
+				up = down = false;
+			if (left && right)
+				left = right = false;
 
-		if (up || down || left || right) {
-			directionAngle = 0;
-			if (up) {
-				directionAngle = -90;
-				if (left)
-					directionAngle -= 45;
-				else if (right)
-					directionAngle += 45;
-				facing = FlxObject.UP;
-			} else if (down) {
-				directionAngle = 90;
-				if (left)
-					directionAngle += 45;
-				else if (right)
-					directionAngle -= 45;
-				facing = FlxObject.DOWN;
-			} else if (left) {
-				directionAngle = 180;
-				facing = FlxObject.LEFT;
-			} else if (right) {
+			if (up || down || left || right) {
 				directionAngle = 0;
-				facing = FlxObject.RIGHT;
-			}
+				if (up) {
+					directionAngle = -90;
+					if (left)
+						directionAngle -= 45;
+					else if (right)
+						directionAngle += 45;
+					facing = FlxObject.UP;
+				} else if (down) {
+					directionAngle = 90;
+					if (left)
+						directionAngle += 45;
+					else if (right)
+						directionAngle -= 45;
+					facing = FlxObject.DOWN;
+				} else if (left) {
+					directionAngle = 180;
+					facing = FlxObject.LEFT;
+				} else if (right) {
+					directionAngle = 0;
+					facing = FlxObject.RIGHT;
+				}
 
-			if (running) {
-				velocity.set(runSpeed, 0);
-			} else {
-				velocity.set(speed, 0);
-			}
-			velocity.rotate(FlxPoint.weak(0, 0), directionAngle);
+				if (running) {
+					velocity.set(runSpeed, 0);
+				} else {
+					velocity.set(speed, 0);
+				}
+				velocity.rotate(FlxPoint.weak(0, 0), directionAngle);
 
-			// if the player is moving (velocity is not 0 for either axis), we change the animation to match their facing
-			if (velocity.x != 0 || velocity.y != 0) {
-				if (facing != touching) {
+				// if the player is moving (velocity is not 0 for either axis), we change the animation to match their facing
+				if (velocity.x != 0 || velocity.y != 0) {
 					switch (facing) {
 						case FlxObject.LEFT:
 							animation.play("walkLeft");
@@ -212,6 +219,14 @@ class Human extends FlxSprite {
 		if (j) {
 			if (items.members[0] != null) {
 				chuckItem(items.members[0]);
+			} else {
+				if (items.members[1] != null) {
+					chuckItem(items.members[1]);
+				} else {
+					if (items.members[2] != null) {
+						chuckItem(items.members[2]);
+					}
+				}
 			}
 		} else if (k) {
 			if (items.members[1] != null) {
@@ -225,21 +240,30 @@ class Human extends FlxSprite {
 	}
 
 	function chuckItem(_item:Item) {
-		canPickUp = false;
-		var t = new FlxTimer().start(0.2, function(_) canPickUp = true);
-
 		FlxTween.tween(_item, { // we move the item to player's position before chucking (prevents items getting chucked when inside solids)
 			x: this.x,
 			y: this.y,
-		}, 0.05);
-		_item.velocity.set(600, 0);
-		_item.velocity.rotate(FlxPoint.weak(0, 0), directionAngle);
-		_item.unEquip();
-		items.members[_item.slot] = null;
+		}, 0.07, {
+			onComplete: function(_) {
+				// prevent human from picking up the item right away
+				canPickUp = false;
+				pickupTimer.start(0.25, function(_) canPickUp = true);
+				// unequip item
+				_item.unEquip();
+				items.members[_item.slot] = null;
+				// set velocity
+				_item.velocity.set(500, 0);
+				_item.velocity.rotate(FlxPoint.weak(0, 0), directionAngle);
+				// modify stats
+				infectionChance += _item.infectionChanceReduction;
+				maxGermSpeed += _item.germSpeedReduction;
+				emitter.speed.set(5, maxGermSpeed);
+			}
+		});
+	}
 
-		infectionChance += _item.infectionChanceReduction;
-		maxGermSpeed += _item.germSpeedReduction;
-		emitter.speed.set(5, maxGermSpeed);
+	public function isTryingToInteract():Bool {
+		return e;
 	}
 
 	public function gainCoin(_amountGained:Int) {
@@ -255,7 +279,7 @@ class Human extends FlxSprite {
 			newCoin.initialize(x, y);
 			PlayState.coins.add(newCoin);
 
-			var maxVel = 100;
+			var maxVel = 200;
 			newCoin.velocity.set(FlxG.random.float(-maxVel, maxVel), FlxG.random.float(-maxVel, maxVel));
 		}
 		canPickUp = false;
@@ -283,9 +307,9 @@ class Human extends FlxSprite {
 	public function infect() {
 		isInfected = true;
 
-		emitter.start(false, 0.4);
+		emitter.start(false, 0.55);
 
-		sicknessTimer.start(35, cure);
+		sicknessTimer.start(30, cure);
 		sicknessEffectsInterval.start(5, function(_) doDamage(4), 0); // virus debuffs are applied every 3 seconds (for now only damage is felt)
 	}
 
@@ -332,16 +356,14 @@ class Human extends FlxSprite {
 		sicknessEffectsInterval.cancel();
 		emitter.emitting = false; // otherwise the emitter will keep emitting from where the body was prior to being killed
 
-		up = left = right = down = false; // we stop current movement
+		canMove = false; // we stop current movement
 
 		setColorTransform(1, 1, 1, 1, 255, 0, 0);
 		FlxTween.tween(this, {
 			angle: 90
-		}, 0.3);
-
-		FlxTween.tween(this, {
+		}, 0.5).then(FlxTween.tween(this, {
 			alpha: 0.1
-		}, 0.5, {onComplete: function(_) kill()});
+		}, 0.5, {onComplete: function(_) kill()}));
 	}
 
 	function unEquipItems() {

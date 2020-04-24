@@ -28,7 +28,7 @@ class NPC extends Human {
 		isLeftFree = true;
 		isRightFree = true;	
 		
-		viewLenght = 60;
+		viewLenght = 100;
 	}
 
 	override function update(elapsed:Float) {
@@ -39,7 +39,7 @@ class NPC extends Human {
 
 	function idle() {
 		if (!idleTimer.active) {
-			idleTimer.start(FlxG.random.float(0.5, 2.5), MoveInRandomDirection);
+			idleTimer.start(FlxG.random.float(0, 3), MoveInRandomDirection);
 		}
 	}
 
@@ -66,8 +66,8 @@ class NPC extends Human {
 			currYDir = "none";
 		}
 
-		var maxWalkTime:Float = FlxG.random.float(0.5, 5.5);
-		if (FlxG.random.bool(20)) { // chance of running instead of walking
+		var maxWalkTime:Float = FlxG.random.float(1, 6.5);
+		if (FlxG.random.bool(30)) { // chance of running instead of walking
 			running = true;
 		}
 

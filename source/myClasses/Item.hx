@@ -13,6 +13,9 @@ enum abstract ItemType(Int) to Int {
 }
 
 class Item extends FlxSprite {
+	static final BASE_SCALE:Float = 1;
+	static final EQUIPPED_SCALE:Float = 0.7;
+
 	public var type(default, null):ItemType;
 
 	public var slot(default, null):Int; // array slot where the item is kept in the human class (0 = Mask, 1 = Gloves, 2 = Sanitizer)
@@ -28,8 +31,6 @@ class Item extends FlxSprite {
 	public var germSpeedReduction(default, null):Int;
 
 	public var isEquipped(default, null):Bool;
-
-	var uprightTimer:FlxTimer; // timer that once in a while checks the angle and brings it upright if it's not
 
 	// for things that are only set once
 	public function new() {
@@ -75,14 +76,8 @@ class Item extends FlxSprite {
 				slot = 2;
 		}
 
-		scale.set(0.7, 0.7);
+		scale.set(BASE_SCALE, BASE_SCALE);
 		updateHitbox();
-
-		uprightTimer = new FlxTimer().start(1.5, function(_) {
-			if (angle != 0) {
-				FlxTween.tween(this, {angle: 0}, 0.5);
-			}
-		}, 0);
 	}
 
 	override function update(elapsed:Float) {
@@ -99,18 +94,17 @@ class Item extends FlxSprite {
 			setColorTransform(1, 1, 1, 1, 50, 100, 50);
 
 			FlxTween.tween(this.scale, {
-				x: 1.5,
-				y: 1,
+				x: BASE_SCALE + 0.7,
+				y: BASE_SCALE + 0.5,
 			}, 0.15, {
 				ease: FlxEase.expoOut,
-			}).then(FlxTween.tween(this, {
-				angle: angle + 360,
-			}, 0.20).then(FlxTween.tween(this.scale, {
-					x: 0.7,
-					y: 0.7
-				}, 0.15, {
-					ease: FlxEase.expoOut,
-				})));
+			}).then(FlxTween.tween(this.scale, {
+				x: EQUIPPED_SCALE,
+				y: EQUIPPED_SCALE,
+			}, 0.15, {
+				ease: FlxEase.expoOut,
+				onComplete: function(_) updateHitbox()
+			}));
 		}
 	}
 
@@ -119,11 +113,13 @@ class Item extends FlxSprite {
 		isEquipped = false;
 		setColorTransform();
 		solid = true;
+		scale.set(BASE_SCALE, BASE_SCALE);
+		updateHitbox();
 	}
 
 	function followOwner() {
 		if (owner != null) {
-			var distFromOwner = getPosition().distanceTo(owner.getPosition());
+			var distFromOwner = getMidpoint().distanceTo(owner.getMidpoint());
 
 			direction = FlxVector.weak(owner.x - x, owner.y - y);
 			direction.length = distFromOwner * velocityMultiplier;

@@ -1,5 +1,6 @@
 package;
 
+import flixel.text.FlxText;
 import openfl.filters.ShaderFilter;
 import flixel.util.FlxTimer;
 import openfl.ui.GameInputControl;
@@ -22,12 +23,14 @@ class PlayState extends FlxState {
 	var player:Player;
 
 	public static var coins:FlxTypedGroup<Coin>; // group of coins
-	public static var items:FlxTypedGroup<Item>;
+	public static var items:FlxTypedGroup<Item>; // group of items
 
 	public static var npcs:FlxTypedGroup<NPC>; // group of npcs
 	public static var actors:FlxTypedGroup<Human>; // group of npcs + player
-	public static var spawners:FlxTypedGroup<NPCSpawner>;
+	public static var spawners:FlxTypedGroup<NPCSpawner>; // group of spawners
 	public static var emitters:FlxTypedGroup<FlxEmitter>; // group of emitters
+
+	var collidingObjects:FlxGroup; // objs that collide with tilemap
 
 	var map:FlxOgmo3Loader;
 	var collisionsLayer:FlxTilemap;
@@ -45,6 +48,8 @@ class PlayState extends FlxState {
 	var npcDetectionTimer:FlxTimer;
 
 	override public function create():Void {
+		FlxG.fixedTimestep = false;
+
 		/// TILEMAP STUFF
 		map = new FlxOgmo3Loader(AssetPaths.cityTilemap__ogmo, AssetPaths.city1__json);
 		collisionsLayer = map.loadTilemap(AssetPaths.tiles__png, "collisions");
@@ -56,12 +61,12 @@ class PlayState extends FlxState {
 		groundLayer = map.loadTilemap(AssetPaths.tilemap_packed__png, "ground");
 		groundLayer.useScaleHack = false;
 		add(groundLayer);
-		objectsLayer = map.loadTilemap(AssetPaths.tilemap_packed__png, "objects");
-		objectsLayer.useScaleHack = false;
-		add(objectsLayer);
 		buildingsLayer = map.loadTilemap(AssetPaths.tilemap_packed__png, "buildings");
 		buildingsLayer.useScaleHack = false;
 		add(buildingsLayer);
+		objectsLayer = map.loadTilemap(AssetPaths.tilemap_packed__png, "objects");
+		objectsLayer.useScaleHack = false;
+		add(objectsLayer);
 
 		/// CAMERA STUFF
 		gameCamera = new FlxCamera(0, 0, FlxG.width, FlxG.height);
@@ -90,6 +95,10 @@ class PlayState extends FlxState {
 		npcs = new FlxTypedGroup<NPC>();
 		add(npcs);
 
+		/// SPAWNER
+		spawners = new FlxTypedGroup<NPCSpawner>();
+		add(spawners);
+
 		/// PLAYER STUFF
 		player = new Player();
 		player.initialize(0, 0);
@@ -102,13 +111,16 @@ class PlayState extends FlxState {
 		actors = new FlxTypedGroup<Human>();
 		actors.add(player);
 
-		/// SPAWNER
-		spawners = new FlxTypedGroup<NPCSpawner>();
+		/// OBJECTS GROUP
+		collidingObjects = new FlxGroup();
+		collidingObjects.add(actors);
+		collidingObjects.add(coins);
+		collidingObjects.add(items);
 
 		/// ENTITIES STUFF
 		map.loadEntities(placeEntities, "entities");
 
-		for(i in 0...3){
+		for (i in 0...3) {
 			npcs.getRandom().infect();
 		}
 
@@ -165,7 +177,8 @@ class PlayState extends FlxState {
 				actors.add(newNpc);
 
 			case "npcSpawner":
-				spawners.add(new NPCSpawner(entity.x, entity.y));
+				var newSpawner = new NPCSpawner(entity.x, entity.y, player);
+				spawners.add(newSpawner);
 		}
 	}
 
@@ -174,12 +187,8 @@ class PlayState extends FlxState {
 
 		// collisions between actors
 		FlxG.collide(actors, actors, humanTouchesHuman);
-		// collisions between actors and tilemap
-		FlxG.collide(actors, collisionsLayer);
-		// collisions between items and tilemap
-		FlxG.collide(items, collisionsLayer);
-		// trying to prevent coins from getting stuck inside walls
-		FlxG.collide(coins, collisionsLayer);
+		// collisions between actors, coins and items against tilemap
+		FlxG.collide(collidingObjects, collisionsLayer);
 
 		// overlaps between actors and virus
 		FlxG.overlap(actors, emitters, humanTouchesVirus);
@@ -187,6 +196,8 @@ class PlayState extends FlxState {
 		FlxG.overlap(actors, coins, humanTouchesCoin);
 		// overlaps between actors and items
 		FlxG.overlap(actors, items, humanTouchesItem);
+		// overlaps between player and spawners
+		FlxG.overlap(player, spawners, playerOverSpawner);
 
 		// pressing period/comma zooms in/out
 		if (FlxG.keys.justPressed.PERIOD) {
@@ -247,6 +258,18 @@ class PlayState extends FlxState {
 				if (!_actor1.isInfected && !_actor1.isImmune) {
 					_actor1.tryToInfect();
 				}
+			}
+		}
+	}
+
+	function playerOverSpawner(_player:Player, _spawner:NPCSpawner) {
+		if (_player.alive && _player.exists && _spawner.alive && _spawner.exists) {
+			if(!_spawner.isTextVisible){
+				add(_spawner.proximityText);
+				_spawner.isTextVisible = true;
+			}
+			if (_player.isTryingToInteract()) {
+				_spawner.toggleOnOff();
 			}
 		}
 	}

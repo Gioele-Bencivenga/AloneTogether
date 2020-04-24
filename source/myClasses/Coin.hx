@@ -15,7 +15,6 @@ class Coin extends FlxSprite {
 		loadGraphic(AssetPaths.coin__png, false, 8, 8);
 
 		emitter = new FlxEmitter();
-		emitter.makeParticles(2, 2, FlxColor.YELLOW, 50);
 	}
 
 	public function initialize(_x:Float, _y:Float) {
@@ -23,14 +22,14 @@ class Coin extends FlxSprite {
 		y = _y;
 
 		angle = 0;
-		drag.x = drag.y = 50;
+		drag.x = drag.y = 300;
 
 		/// EMITTER
+		emitter.makeParticles(2, 2, FlxColor.YELLOW, 50);
 		emitter.color.set(FlxColor.YELLOW, FlxColor.ORANGE, FlxColor.WHITE, FlxColor.YELLOW);
 		emitter.alpha.set(1, 1, 0, 0.3);
 		emitter.lifespan.set(0.1, 0.4);
 		emitter.speed.set(50, 200);
-		emitter.angularVelocity.set(-500, 500);
 		emitter.launchMode = FlxEmitterMode.CIRCLE;
 	}
 

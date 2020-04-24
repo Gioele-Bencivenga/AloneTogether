@@ -28,6 +28,7 @@ class Player extends Human {
 		j = FlxG.keys.anyJustReleased([J, C]);
 		k = FlxG.keys.anyJustReleased([K, X]);
 		l = FlxG.keys.anyJustReleased([L, Z]);
+		e = FlxG.keys.anyJustReleased([E, V]);
 	}
 
 	override function doDamage(_damageAmount:Float) {
