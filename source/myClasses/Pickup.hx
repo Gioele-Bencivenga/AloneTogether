@@ -20,8 +20,8 @@ class Pickup extends FlxSprite {
 	public var type(default, null):PickupType;
 
 	/// SOUNDS
-	public var getSound(default, null):FlxSound;
-	public var explosionSound(default, null):FlxSound;
+	var getSound:FlxSound;
+	var explosionSound:FlxSound;
 
 	public function new() {
 		super();
@@ -62,19 +62,22 @@ class Pickup extends FlxSprite {
 		/// SOUNDS
 		switch type {
 			case Coin:
-				getSound = FlxG.sound.load(AssetPaths.coinGet__wav);
-				explosionSound = FlxG.sound.load(AssetPaths.coinExplosion__wav);
+				//getSound = FlxG.sound.load("assets/sounds/PickupSounds/coinGet.wav");
+				explosionSound = FlxG.sound.load("assets/sounds/PickupSounds/coinExplosion.wav");
 
 			case Paracetamol:
-				getSound = FlxG.sound.load(AssetPaths.pillGet__wav);
-				explosionSound = FlxG.sound.load(AssetPaths.pillExplosion__wav);
+				//getSound = FlxG.sound.load("assets/sounds/PickupSounds/pillGet.wav");
+				explosionSound = FlxG.sound.load("assets/sounds/PickupSounds/pillExplosion.wav");
 		}
-		getSound.volume = 0.5;
-		explosionSound.volume = 0.5;
+		//getSound.volume = 0.5;
+		//explosionSound.volume = 0.5;
 	}
 
 	override function kill() {
 		alive = false;
+
+		//getSound.proximity(x, y, PlayState.player, 50);
+		//getSound.play().fadeIn(0.1);
 
 		var randX = FlxG.random.int(-10, 10);
 		var randY = FlxG.random.int(20, 45);
@@ -84,11 +87,13 @@ class Pickup extends FlxSprite {
 			x: x + randX,
 			y: y - randY,
 			angle: angle - randAngle
-		}, 0.30, {
+		}, 0.50, {
 			ease: FlxEase.expoOut,
 			onComplete: function(_) {
 				emitter.focusOn(this);
 				emitter.start();
+				//explosionSound.play().fadeIn(0.1);
+				//explosionSound.proximity(x, y, PlayState.player, 50);
 				exists = false;
 			}
 		});

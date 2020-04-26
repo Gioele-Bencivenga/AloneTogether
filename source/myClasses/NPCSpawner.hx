@@ -35,8 +35,10 @@ class NPCSpawner extends FlxSprite {
 		textDissolver = new FlxTimer();
 
 		/// SOUNDS
-		closeDoorSound = FlxG.sound.load(AssetPaths.doorClose__wav);
-		openDoorSound = FlxG.sound.load(AssetPaths.doorOpen__wav);
+		closeDoorSound = FlxG.sound.load("assets/sounds/BuildingSounds/doorClose.wav");
+		openDoorSound = FlxG.sound.load("assets/sounds/BuildingSounds/doorOpen.wav");
+		closeDoorSound.volume = 0.5;
+		openDoorSound.volume = 0.5;
 
 		proximityText = new FlxText(x, y, 0, "Placeholder text");
 		proximityText.setPosition(getGraphicMidpoint().x - (proximityText.width / 2), y - FlxG.random.int(10, 50));

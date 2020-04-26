@@ -45,13 +45,6 @@ class Player extends Human {
 			interactOption = 4;
 	}
 
-	override function pickupPickup(_pickup:Pickup) {
-		_pickup.getSound.play();
-		_pickup.getSound.onComplete = function() _pickup.explosionSound.play();
-
-		super.pickupPickup(_pickup);
-	}
-
 	override function doDamage(_damageAmount:Float) {
 		FlxG.cameras.shake(0.003, 0.1);
 		FlxG.cameras.flash(FlxColor.fromRGB(255, 0, 0, 50), 0.2);

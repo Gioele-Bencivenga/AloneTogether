@@ -99,9 +99,9 @@ class Human extends FlxSprite {
 		pickupTimer = new FlxTimer();
 
 		/// SOUNDS
-		footstepsSound = FlxG.sound.load(AssetPaths.footsteps__wav);
+		footstepsSound = FlxG.sound.load("assets/sounds/HumanSounds/footsteps.wav");
 		footstepsSound.volume = 0.2;
-		runSound = FlxG.sound.load(AssetPaths.footstepsRun__wav);
+		runSound = FlxG.sound.load("assets/sounds/HumanSounds/footstepsRun.wav");
 		runSound.volume = 0.2;
 	}
 
@@ -172,6 +172,7 @@ class Human extends FlxSprite {
 	override function update(elapsed:Float) {
 		updateMovement();
 		updateChucking();
+		playMovementSounds();
 
 		emitter.focusOn(this);
 
@@ -217,15 +218,6 @@ class Human extends FlxSprite {
 				}
 				velocity.rotate(FlxPoint.weak(0, 0), directionAngle);
 
-				if (running) {
-					runSound.proximity(x, y, PlayState.player, 150, false);
-					runSound.play();
-				}
-				if (!running) {
-					footstepsSound.proximity(x, y, PlayState.player, 150, false);
-					footstepsSound.play();
-				}
-
 				// if the player is moving (velocity is not 0 for either axis), we change the animation to match their facing
 				if (velocity.x != 0 || velocity.y != 0) {
 					switch (facing) {
@@ -239,6 +231,22 @@ class Human extends FlxSprite {
 							animation.play("walkDown");
 					}
 				}
+			}
+		}
+	}
+
+	function playMovementSounds() {
+		if (velocity.x != 0 || velocity.y != 0) {
+			if (running) {
+				runSound.proximity(x, y, PlayState.player, 100, true);
+
+				if (!runSound.playing)
+					runSound.play().fadeIn(0.1);
+			} else {
+				footstepsSound.proximity(x, y, PlayState.player, 100, true);
+
+				if (!footstepsSound.playing)
+					footstepsSound.play().fadeIn(0.1);
 			}
 		}
 	}
