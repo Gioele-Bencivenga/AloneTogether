@@ -1,5 +1,7 @@
 package myClasses;
 
+import flixel.system.FlxSound;
+import myClasses.Pickup.PickupType;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 import haxe.Timer;
@@ -36,6 +38,13 @@ class Human extends FlxSprite {
 	var l:Bool = false;
 	var e:Bool = false;
 
+	public var interactOption(default, null):Int = 0; // contains 1 to 4 based on what number is pressed
+
+	var one:Bool = false;
+	var two:Bool = false;
+	var three:Bool = false;
+	var four:Bool = false;
+
 	var directionAngle:Float;
 
 	public var isInfected(default, null):Bool;
@@ -65,6 +74,10 @@ class Human extends FlxSprite {
 
 	var pickupTimer:FlxTimer;
 
+	/// SOUNDS
+	var footstepsSound:FlxSound;
+	var runSound:FlxSound;
+
 	// for things that are only set once
 	public function new() {
 		super();
@@ -84,6 +97,12 @@ class Human extends FlxSprite {
 		immunityTimer = new FlxTimer();
 		sicknessEffectsInterval = new FlxTimer();
 		pickupTimer = new FlxTimer();
+
+		/// SOUNDS
+		footstepsSound = FlxG.sound.load(AssetPaths.footsteps__wav);
+		footstepsSound.volume = 0.2;
+		runSound = FlxG.sound.load(AssetPaths.footstepsRun__wav);
+		runSound.volume = 0.2;
 	}
 
 	// for things that need to be set each time we recycle
@@ -147,7 +166,7 @@ class Human extends FlxSprite {
 		emitter.autoUpdateHitbox = true;
 
 		/// HEALTH REGEN
-		healthRegenTimer.start(10, function(_) heal(1), 0);
+		healthRegenTimer.start(10, function(_) health += 1, 0);
 	}
 
 	override function update(elapsed:Float) {
@@ -197,6 +216,15 @@ class Human extends FlxSprite {
 					velocity.set(speed, 0);
 				}
 				velocity.rotate(FlxPoint.weak(0, 0), directionAngle);
+
+				if (running) {
+					runSound.proximity(x, y, PlayState.player, 150, false);
+					runSound.play();
+				}
+				if (!running) {
+					footstepsSound.proximity(x, y, PlayState.player, 150, false);
+					footstepsSound.play();
+				}
 
 				// if the player is moving (velocity is not 0 for either axis), we change the animation to match their facing
 				if (velocity.x != 0 || velocity.y != 0) {
@@ -262,22 +290,40 @@ class Human extends FlxSprite {
 		});
 	}
 
-	public function isTryingToInteract():Bool {
+	public function interactPressed():Bool {
 		return e;
 	}
 
-	public function gainCoin(_amountGained:Int) {
-		if (canPickUp) {
-			coinAmount += _amountGained;
+	public function interactOptionsPressed():Bool {
+		if (one || two || three || four) {
+			return true;
+		} else {
+			return false;
 		}
+	}
+
+	public function pickupPickup(_pickup:Pickup) {
+		if (canPickUp) {
+			switch _pickup.type {
+				case Coin:
+					coinAmount += 1;
+
+				case Paracetamol:
+					heal(5);
+			}
+		}
+	}
+
+	public function loseCoins(_amountLost:Int) {
+		coinAmount -= _amountLost;
 	}
 
 	function dropCoins(_amount:Int) {
 		coinAmount -= _amount;
 		for (i in 0..._amount) {
-			var newCoin = PlayState.coins.recycle(Coin.new);
-			newCoin.initialize(x, y);
-			PlayState.coins.add(newCoin);
+			var newCoin = PlayState.pickups.recycle(Pickup.new);
+			newCoin.initialize(x, y, PickupType.Coin);
+			PlayState.pickups.add(newCoin);
 
 			var maxVel = 200;
 			newCoin.velocity.set(FlxG.random.float(-maxVel, maxVel), FlxG.random.float(-maxVel, maxVel));
@@ -310,7 +356,7 @@ class Human extends FlxSprite {
 		emitter.start(false, 0.55);
 
 		sicknessTimer.start(30, cure);
-		sicknessEffectsInterval.start(5, function(_) doDamage(4), 0); // virus debuffs are applied every 3 seconds (for now only damage is felt)
+		sicknessEffectsInterval.start(2, function(_) doDamage(2), 0);
 	}
 
 	public function cure(_) {
@@ -320,7 +366,7 @@ class Human extends FlxSprite {
 		emitter.emitting = false;
 		sicknessEffectsInterval.cancel();
 
-		immunityTimer.start(FlxG.random.int(5, 20),
+		immunityTimer.start(FlxG.random.int(2, 10),
 			function(_) isImmune = false); // once a person is cured from the virus it becomes immune to it for some time
 	}
 
@@ -349,11 +395,14 @@ class Human extends FlxSprite {
 	function myKill() {
 		alive = false;
 
+		PlayState.deadCount++;
+
 		unEquipItems();
 		dropCoins(coinAmount);
 
 		sicknessTimer.cancel();
 		sicknessEffectsInterval.cancel();
+		healthRegenTimer.cancel();
 		emitter.emitting = false; // otherwise the emitter will keep emitting from where the body was prior to being killed
 
 		canMove = false; // we stop current movement

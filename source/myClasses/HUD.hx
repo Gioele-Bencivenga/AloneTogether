@@ -20,6 +20,10 @@ class HUD extends FlxTypedGroup<FlxSprite> {
 
 	var txtHealth:FlxText;
 	var txtInfected:FlxText;
+
+	var txtInfChance:FlxText;
+
+	var coinIcon:FlxSprite;
 	var txtCoins:FlxText;
 
 	var healthBar:FlxBar;
@@ -39,9 +43,9 @@ class HUD extends FlxTypedGroup<FlxSprite> {
 		actors = _actors;
 
 		backgroundHeight = 40;
-		backgroundColor = FlxColor.fromRGB(0, 0, 225, 200);
+		backgroundColor = FlxColor.ORANGE;
 		dividerHeight = 2;
-		dividerColor = FlxColor.fromRGB(0, 0, 255, 255);
+		dividerColor = FlxColor.YELLOW;
 
 		background = new FlxSprite(0, FlxG.height - backgroundHeight);
 		background.makeGraphic(FlxG.width, backgroundHeight, backgroundColor);
@@ -49,19 +53,33 @@ class HUD extends FlxTypedGroup<FlxSprite> {
 		add(background);
 
 		barWidth = 400;
-		healthBar = new FlxBar((FlxG.width / 2) - (barWidth / 2), background.y + 7, LEFT_TO_RIGHT, barWidth, backgroundHeight - 10, player, 'health', 0,
+		healthBar = new FlxBar((FlxG.width / 2) - (barWidth / 2), background.y + 6, LEFT_TO_RIGHT, barWidth, backgroundHeight - 10, player, 'health', 0,
 			player.MAX_HEALTH, false);
 		healthBar.createColoredEmptyBar(FlxColor.fromRGB(0, 0, 0, 140), true, dividerColor);
-		healthBar.createColoredFilledBar(FlxColor.fromRGB(0, 175, 255, 170), true, dividerColor);
+		healthBar.createColoredFilledBar(FlxColor.fromRGB(50, 175, 0, 170), true, dividerColor);
 		add(healthBar);
 
-		txtHealth = new FlxText((FlxG.width / 2) - 80, background.y + 5, 160, " ", 25);
+		txtHealth = new FlxText((FlxG.width / 2), background.y + 5, 0, "HP: 30 / 30", 25);
+		txtHealth.setPosition(txtHealth.x - (txtHealth.width / 2), txtHealth.y);
+		txtHealth.setBorderStyle(SHADOW, FlxColor.BLACK, 1);
 		add(txtHealth);
 
-		txtInfected = new FlxText(FlxG.width - 300, background.y + 5, 400, " ", 25);
+		txtInfChance = new FlxText(0, background.y + 5, 0, "", 25);
+		txtInfChance.setBorderStyle(SHADOW, FlxColor.BLACK, 1);
+		add(txtInfChance);
+
+		txtInfected = new FlxText(FlxG.width, background.y + 5, 0, "INFECTED: 70 / 70", 25);
+		txtInfected.setPosition(txtInfected.x - txtInfected.width, txtInfected.y);
+		txtInfected.setBorderStyle(SHADOW, FlxColor.BLACK, 1);
 		add(txtInfected);
 
-		txtCoins = new FlxText(5, background.y + 5, 200, " ", 25);
+		coinIcon = new FlxSprite(0, 0, AssetPaths.coin__png);
+		coinIcon.scale.set(6, 6);
+		coinIcon.updateHitbox();
+		coinIcon.setPosition(FlxG.width / 2 - (coinIcon.width * 1.5), coinIcon.y);
+		add(coinIcon);
+		txtCoins = new FlxText(coinIcon.x + coinIcon.width, coinIcon.y, 0, " ", 40);
+		txtCoins.setBorderStyle(OUTLINE_FAST, FlxColor.BLACK, 3);
 		add(txtCoins);
 
 		// we call the function on each element, by setting scrollFactor to 0,0 the elements won't scroll based on camera movements
@@ -71,7 +89,7 @@ class HUD extends FlxTypedGroup<FlxSprite> {
 
 		/// HUD REFRESH TIMER
 		refreshTimer = new FlxTimer();
-		refreshTimer.start(0.5, function(_) {
+		refreshTimer.start(0.3, function(_) {
 			updateInfectedNumber();
 			updateHUD();
 		}, 0);
@@ -80,17 +98,18 @@ class HUD extends FlxTypedGroup<FlxSprite> {
 	public function updateHUD() {
 		txtHealth.text = 'HP: ${player.health}/${player.MAX_HEALTH}';
 
-		txtInfected.text = 'INFECTED: ${nOfInfected} / ${actors.countLiving()}';
+		txtInfected.text = 'INFECTED: ${nOfInfected}/${actors.countLiving()}';
 
-		//txtCoins.text = 'COINS: ${player.coinAmount}';
-		txtCoins.text = 'CHANCE: ${player.infectionChance}';
+		txtCoins.text = 'x: ${player.coinAmount}';
+
+		txtInfChance.text = 'CHANCE OF INFECTION: ${player.infectionChance}%';
 	}
 
 	// need timer to run this function
 	function updateInfectedNumber() {
 		var i = 0;
 		for (actor in actors) {
-			if(actor.alive && actor.exists && actor.isInfected){
+			if (actor.alive && actor.exists && actor.isInfected) {
 				i++;
 			}
 		}

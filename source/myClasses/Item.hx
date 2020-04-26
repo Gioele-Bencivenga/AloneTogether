@@ -55,7 +55,7 @@ class Item extends FlxSprite {
 				loadGraphic(AssetPaths.surgicalMask__png, false, 16, 16);
 				maxDistFromOwner = 5;
 				velocityMultiplier = 5;
-				infectionChanceReduction = 25;
+				infectionChanceReduction = 26;
 				germSpeedReduction = 7;
 				slot = 0;
 
@@ -63,7 +63,7 @@ class Item extends FlxSprite {
 				loadGraphic(AssetPaths.latticeGlove__png, false, 16, 16);
 				maxDistFromOwner = 10;
 				velocityMultiplier = 3.5;
-				infectionChanceReduction = 15;
+				infectionChanceReduction = 17;
 				germSpeedReduction = 3;
 				slot = 1;
 
@@ -71,7 +71,7 @@ class Item extends FlxSprite {
 				loadGraphic(AssetPaths.handSanitizer__png, false, 16, 16);
 				maxDistFromOwner = 15;
 				velocityMultiplier = 2.5;
-				infectionChanceReduction = 20;
+				infectionChanceReduction = 22;
 				germSpeedReduction = 5;
 				slot = 2;
 		}
