@@ -121,70 +121,78 @@ class Building extends FlxSprite {
 			canInteract = false;
 			var t = new FlxTimer().start(0.2, function(_) canInteract = true);
 
+			var interactSuccess:Bool = false;
+
 			switch type {
 				case Research:
 					switch _interactOption {
 						case 1:
-							if (player.coinAmount < 2) {
-								// play sound
-							} else {
+							if (player.coinAmount >= 2) {
 								player.loseCoins(2);
 								gainCoins(2);
+
+								interactSuccess = true;
 							}
 						case 2:
-							if (player.coinAmount < 10) {
-								// play sound
-							} else {
+							if (player.coinAmount >= 10) {
 								player.loseCoins(10);
 								gainCoins(10);
+
+								interactSuccess = true;
 							}
 						case 3:
-							if (player.coinAmount < 20) {
-								// play sound
-							} else {
+							if (player.coinAmount >= 20) {
 								player.loseCoins(20);
 								gainCoins(20);
+
+								interactSuccess = true;
 							}
 						case 4:
-							if (player.coinAmount < 30) {
-								// play sound
-							} else {
+							if (player.coinAmount >= 30) {
 								player.loseCoins(30);
 								gainCoins(30);
+
+								interactSuccess = true;
 							}
 					}
 
 				case Pharmacy:
 					switch _interactOption {
 						case 1:
-							if (player.coinAmount < 10) {
-								// play sound
-							} else {
+							if (player.coinAmount >= 10) {
 								player.loseCoins(10);
 								spitItem(ItemType.Mask);
+
+								interactSuccess = true;
 							}
 						case 2:
-							if (player.coinAmount < 3) {
-								// play sound
-							} else {
+							if (player.coinAmount >= 3) {
 								player.loseCoins(3);
 								spitItem(ItemType.Gloves);
+
+								interactSuccess = true;
 							}
 						case 3:
-							if (player.coinAmount < 7) {
-								// play sound
-							} else {
+							if (player.coinAmount >= 7) {
 								player.loseCoins(7);
 								spitItem(ItemType.Sanitizer);
+
+								interactSuccess = true;
 							}
 						case 4:
-							if (player.coinAmount < 4) {
-								// play sound
-							} else {
+							if (player.coinAmount >= 4) {
 								player.loseCoins(4);
 								spitPickup(PickupType.Paracetamol);
+
+								interactSuccess = true;
 							}
 					}
+			}
+
+			if (interactSuccess) {
+				// play positive sound
+			} else {
+				// play negative sound
 			}
 		}
 	}

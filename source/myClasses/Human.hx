@@ -75,8 +75,15 @@ class Human extends FlxSprite {
 	var pickupTimer:FlxTimer;
 
 	/// SOUNDS
-	var footstepsSound:FlxSound;
-	var runSound:FlxSound;
+	var footstepsSound:String;
+	var runSound:String;
+	var canPlayFootsteps:Bool;
+
+	var infectSound:String;
+	var cureSound:String;
+
+	var damageSound:String;
+	var deathSound:String;
 
 	// for things that are only set once
 	public function new() {
@@ -99,10 +106,14 @@ class Human extends FlxSprite {
 		pickupTimer = new FlxTimer();
 
 		/// SOUNDS
-		footstepsSound = FlxG.sound.load("assets/sounds/HumanSounds/footsteps.wav");
-		footstepsSound.volume = 0.2;
-		runSound = FlxG.sound.load("assets/sounds/HumanSounds/footstepsRun.wav");
-		runSound.volume = 0.2;
+		footstepsSound = AssetPaths.footsteps__wav;
+		runSound = AssetPaths.footstepsRun__wav;
+
+		infectSound = AssetPaths.infect__wav;
+		cureSound = AssetPaths.cure__wav;
+
+		damageSound = AssetPaths.damage__wav;
+		deathSound = FlxG.random.getObject([AssetPaths.death__wav, AssetPaths.death2__wav]);
 	}
 
 	// for things that need to be set each time we recycle
@@ -125,6 +136,7 @@ class Human extends FlxSprite {
 		items = new FlxTypedGroup<Item>(3);
 		canPickUp = true;
 		canMove = true;
+		canPlayFootsteps = true;
 
 		/// GRAPHICS
 		if (_sprite == null) {
@@ -236,17 +248,17 @@ class Human extends FlxSprite {
 	}
 
 	function playMovementSounds() {
-		if (velocity.x != 0 || velocity.y != 0) {
-			if (running) {
-				runSound.proximity(x, y, PlayState.player, 100, true);
-
-				if (!runSound.playing)
-					runSound.play().fadeIn(0.1);
-			} else {
-				footstepsSound.proximity(x, y, PlayState.player, 100, true);
-
-				if (!footstepsSound.playing)
-					footstepsSound.play().fadeIn(0.1);
+		if (canPlayFootsteps) {
+			if (velocity.x != 0 || velocity.y != 0) {
+				if (running) {
+					DeanSound.playSound(runSound, 0.5, this, PlayState.player, 100);
+					canPlayFootsteps = false;
+					var t = new FlxTimer().start(0.3, function(_) canPlayFootsteps = true);
+				} else {
+					DeanSound.playSound(footstepsSound, 0.5, this, PlayState.player, 100);
+					canPlayFootsteps = false;
+					var t = new FlxTimer().start(0.5, function(_) canPlayFootsteps = true);
+				}
 			}
 		}
 	}
@@ -361,6 +373,8 @@ class Human extends FlxSprite {
 	public function infect() {
 		isInfected = true;
 
+		DeanSound.playSound(infectSound, 1, this, PlayState.player, 200);
+
 		emitter.start(false, 0.55);
 
 		sicknessTimer.start(30, cure);
@@ -371,6 +385,8 @@ class Human extends FlxSprite {
 		isInfected = false;
 		isImmune = true;
 
+		DeanSound.playSound(cureSound, 1, this, PlayState.player, 200);
+
 		emitter.emitting = false;
 		sicknessEffectsInterval.cancel();
 
@@ -380,6 +396,8 @@ class Human extends FlxSprite {
 
 	public function doDamage(_damageAmount:Float) {
 		health -= _damageAmount;
+
+		DeanSound.playSound(damageSound, 1, this, PlayState.player, 200);
 
 		setColorTransform(1, 1, 1, 1, 255, 0, 0); // colors the sprite
 		FlxTween.tween(this.scale, {
@@ -407,6 +425,8 @@ class Human extends FlxSprite {
 
 		unEquipItems();
 		dropCoins(coinAmount);
+
+		DeanSound.playSound(deathSound, 1, this, PlayState.player, 200);
 
 		sicknessTimer.cancel();
 		sicknessEffectsInterval.cancel();

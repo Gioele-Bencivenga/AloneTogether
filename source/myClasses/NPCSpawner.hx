@@ -24,8 +24,9 @@ class NPCSpawner extends FlxSprite {
 	var textDissolver:FlxTimer; // after switching isTextVisible on the timer switches it off
 
 	/// SOUNDS
-	var closeDoorSound:FlxSound;
-	var openDoorSound:FlxSound;
+	var closeDoorSound:String;
+	var openDoorSound:String;
+	var spawnSound:String;
 
 	public function new(_x:Float, _y:Float, _player:Player) {
 		super(_x, _y);
@@ -35,10 +36,9 @@ class NPCSpawner extends FlxSprite {
 		textDissolver = new FlxTimer();
 
 		/// SOUNDS
-		closeDoorSound = FlxG.sound.load("assets/sounds/BuildingSounds/doorClose.wav");
-		openDoorSound = FlxG.sound.load("assets/sounds/BuildingSounds/doorOpen.wav");
-		closeDoorSound.volume = 0.5;
-		openDoorSound.volume = 0.5;
+		closeDoorSound = AssetPaths.doorClose__wav;
+		openDoorSound = AssetPaths.doorOpen__wav;
+		spawnSound = AssetPaths.spawn__wav;
 
 		proximityText = new FlxText(x, y, 0, "Placeholder text");
 		proximityText.setPosition(getGraphicMidpoint().x - (proximityText.width / 2), y - FlxG.random.int(10, 50));
@@ -68,12 +68,10 @@ class NPCSpawner extends FlxSprite {
 	public function interact() {
 		if (isActive) {
 			deactivate();
-			closeDoorSound.proximity(x, y, PlayState.player, 150);
-			closeDoorSound.play();
+			DeanSound.playSound(closeDoorSound, 1, this, PlayState.player, 40);
 		} else {
 			activate();
-			openDoorSound.proximity(x, y, PlayState.player, 150);
-			openDoorSound.play();
+			DeanSound.playSound(openDoorSound, 1, this, PlayState.player, 40);
 		}
 	}
 
@@ -101,6 +99,8 @@ class NPCSpawner extends FlxSprite {
 				PlayState.npcs.add(newNpc);
 				PlayState.actors.add(newNpc);
 				PlayState.emitters.add(newNpc.emitter);
+
+				DeanSound.playSound(spawnSound, 1, this, PlayState.player, 200);
 			}
 		}
 	}

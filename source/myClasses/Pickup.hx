@@ -1,10 +1,10 @@
 package myClasses;
 
+import flixel.system.FlxAssets.FlxSoundAsset;
 import flixel.system.FlxSound;
 import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 import flixel.FlxG;
-import myClasses.Item.ItemType;
 import flixel.util.FlxColor;
 import flixel.effects.particles.FlxEmitter;
 import flixel.FlxSprite;
@@ -20,8 +20,8 @@ class Pickup extends FlxSprite {
 	public var type(default, null):PickupType;
 
 	/// SOUNDS
-	var getSound:FlxSound;
-	var explosionSound:FlxSound;
+	var getSound:String;
+	var explosionSound:String;
 
 	public function new() {
 		super();
@@ -62,22 +62,19 @@ class Pickup extends FlxSprite {
 		/// SOUNDS
 		switch type {
 			case Coin:
-				//getSound = FlxG.sound.load("assets/sounds/PickupSounds/coinGet.wav");
-				explosionSound = FlxG.sound.load("assets/sounds/PickupSounds/coinExplosion.wav");
+				getSound = AssetPaths.coinGet__wav;
+				explosionSound = AssetPaths.coinExplosion__wav;
 
 			case Paracetamol:
-				//getSound = FlxG.sound.load("assets/sounds/PickupSounds/pillGet.wav");
-				explosionSound = FlxG.sound.load("assets/sounds/PickupSounds/pillExplosion.wav");
+				getSound = AssetPaths.pillGet__wav;
+				explosionSound = AssetPaths.pillExplosion__wav;
 		}
-		//getSound.volume = 0.5;
-		//explosionSound.volume = 0.5;
 	}
 
 	override function kill() {
 		alive = false;
 
-		//getSound.proximity(x, y, PlayState.player, 50);
-		//getSound.play().fadeIn(0.1);
+		DeanSound.playSound(getSound, 0.5, this, PlayState.player, 200);
 
 		var randX = FlxG.random.int(-10, 10);
 		var randY = FlxG.random.int(20, 45);
@@ -92,8 +89,7 @@ class Pickup extends FlxSprite {
 			onComplete: function(_) {
 				emitter.focusOn(this);
 				emitter.start();
-				//explosionSound.play().fadeIn(0.1);
-				//explosionSound.proximity(x, y, PlayState.player, 50);
+				DeanSound.playSound(explosionSound, 0.5, this, PlayState.player, 200);
 				exists = false;
 			}
 		});

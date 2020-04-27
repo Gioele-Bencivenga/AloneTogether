@@ -32,11 +32,18 @@ class Item extends FlxSprite {
 
 	public var isEquipped(default, null):Bool;
 
+	var equipSound1:String;
+	var equipSound2:String;
+
 	// for things that are only set once
 	public function new() {
 		super();
 
 		drag.x = drag.y = 600;
+
+		/// SOUNDS
+		equipSound1 = AssetPaths.equip1__wav;
+		equipSound2 = AssetPaths.equip2__wav;
 	}
 
 	// for things that need to be set each time we recycle
@@ -93,11 +100,13 @@ class Item extends FlxSprite {
 			isEquipped = true;
 			setColorTransform(1, 1, 1, 1, 50, 100, 50);
 
+			DeanSound.playSound(equipSound1, 1, this, PlayState.player, 200);
 			FlxTween.tween(this.scale, {
 				x: BASE_SCALE + 0.7,
 				y: BASE_SCALE + 0.5,
 			}, 0.15, {
 				ease: FlxEase.expoOut,
+				onComplete: function(_) DeanSound.playSound(equipSound2, 1, this, PlayState.player, 200)
 			}).then(FlxTween.tween(this.scale, {
 				x: EQUIPPED_SCALE,
 				y: EQUIPPED_SCALE,
@@ -115,6 +124,9 @@ class Item extends FlxSprite {
 		solid = true;
 		scale.set(BASE_SCALE, BASE_SCALE);
 		updateHitbox();
+
+		DeanSound.playSound(equipSound2, 1, this, PlayState.player, 200, false, null, true,
+			function() DeanSound.playSound(equipSound1, 1, this, PlayState.player, 200));
 	}
 
 	function followOwner() {
