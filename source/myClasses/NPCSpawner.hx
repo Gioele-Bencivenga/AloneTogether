@@ -46,7 +46,7 @@ class NPCSpawner extends FlxSprite {
 		proximityText.shadowOffset.set(-1, 1);
 		hideProximityText();
 
-		spawnRate = 25;
+		spawnRate = FlxG.random.int(5, 20);
 		spawnTimer = new FlxTimer();
 		activate();
 		centerOffsets(true);
@@ -80,7 +80,7 @@ class NPCSpawner extends FlxSprite {
 		setSize(40, 40);
 		spawnTimer.start(spawnRate, spawnNPC, 0);
 		isActive = true;
-		proximityText.text = "Press E to close the building";
+		proximityText.text = "[E] to close the building";
 	}
 
 	function deactivate() {
@@ -88,20 +88,37 @@ class NPCSpawner extends FlxSprite {
 		setSize(40, 40);
 		spawnTimer.cancel();
 		isActive = false;
-		proximityText.text = "Press E to open the building";
+		proximityText.text = "[E] to open the building";
 	}
 
 	function spawnNPC(_) {
-		if (PlayState.actors.countLiving() < 70) {
-			if (FlxG.random.bool(60)) {
-				var newNpc = PlayState.npcs.recycle(NPC.new);
-				newNpc.initialize(x, y + 10);
-				PlayState.npcs.add(newNpc);
-				PlayState.actors.add(newNpc);
-				PlayState.emitters.add(newNpc.emitter);
+		var spawnProbability:Int = 0;
 
-				DeanSound.playSound(spawnSound, 1, this, PlayState.player, 200);
-			}
+		if (PlayState.actors.countLiving() <= 10) {
+			spawnProbability = 100;
+		} else if (PlayState.actors.countLiving() <= 20) {
+			spawnProbability = 90;
+		} else if (PlayState.actors.countLiving() <= 30) {
+			spawnProbability = 85;
+		} else if (PlayState.actors.countLiving() <= 40) {
+			spawnProbability = 75;
+		} else if (PlayState.actors.countLiving() <= 60) {
+			spawnProbability = 60;
+		} else if (PlayState.actors.countLiving() < 70) {
+			spawnProbability = 30;
+		} else if (PlayState.actors.countLiving() >= 70) {
+			spawnProbability = 10;
+		}
+
+		if (FlxG.random.bool(spawnProbability)) {
+			var newNpc = PlayState.npcs.recycle(NPC.new);
+			newNpc.initialize(getMidpoint().x, getMidpoint().y + 12);
+			PlayState.npcs.add(newNpc);
+			PlayState.actors.add(newNpc);
+			PlayState.emitters.add(newNpc.emitter);
+			PlayState.npcTexts.add(newNpc.thanksText);
+
+			DeanSound.playSound(spawnSound, 1, this, PlayState.player, 200);
 		}
 	}
 }

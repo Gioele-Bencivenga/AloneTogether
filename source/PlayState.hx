@@ -1,5 +1,7 @@
 package;
 
+import myClasses.Item.ItemType;
+import flixel.ui.FlxButton.FlxTypedButton;
 import myClasses.Pickup.PickupType;
 import myClasses.Building.BuildingType;
 import flixel.text.FlxText;
@@ -28,10 +30,12 @@ class PlayState extends FlxState {
 	public static var items:FlxTypedGroup<Item>; // group of items
 
 	public static var npcs:FlxTypedGroup<NPC>; // group of npcs
+	public static var npcTexts:FlxTypedGroup<FlxText>; // group of npcs
 	public static var actors:FlxTypedGroup<Human>; // group of npcs + player
 	public static var spawners:FlxTypedGroup<NPCSpawner>; // group of spawners
 	public static var buildings:FlxTypedGroup<Building>; // group of buildings
 	public static var emitters:FlxTypedGroup<FlxEmitter>; // group of emitters
+	public static var radios:FlxTypedGroup<Radio>; // group of radios
 
 	public static var collidingObjects:FlxGroup; // objs that collide with tilemap
 
@@ -92,11 +96,16 @@ class PlayState extends FlxState {
 		pickups = new FlxTypedGroup<Pickup>();
 		add(pickups);
 		items = new FlxTypedGroup<Item>();
+		items.maxSize = 1000;
 		add(items);
 		emitters = new FlxTypedGroup<FlxEmitter>();
 		add(emitters);
+		radios = new FlxTypedGroup<Radio>();
+		add(radios);
 		npcs = new FlxTypedGroup<NPC>();
 		add(npcs);
+		npcTexts = new FlxTypedGroup<FlxText>();
+		add(npcTexts);
 		spawners = new FlxTypedGroup<NPCSpawner>();
 		add(spawners);
 		buildings = new FlxTypedGroup<Building>();
@@ -123,8 +132,13 @@ class PlayState extends FlxState {
 		map.loadEntities(placeEntities, "entities");
 
 		// randomly infect some people
-		for (i in 0...3) {
-			npcs.getRandom().infect();
+		var inf = 0;
+		while (inf < 5) {
+			var npcToInfect = npcs.getRandom();
+			if (npcToInfect != null) {
+				npcToInfect.infect();
+			}
+			inf++; // move this inside the if statement
 		}
 
 		// we put the rooftops after the player so they get rendered in front of it
@@ -133,6 +147,9 @@ class PlayState extends FlxState {
 		add(rooftopsLayer);
 
 		// text should appear over rooftops
+		for (radio in radios) {
+			add(radio.proximityText);
+		}
 		for (spawner in spawners) {
 			add(spawner.proximityText);
 		}
@@ -200,6 +217,7 @@ class PlayState extends FlxState {
 				var newNpc = new NPC();
 				newNpc.initialize(entity.x + 4, entity.y + 4);
 				emitters.add(newNpc.emitter);
+				npcTexts.add(newNpc.thanksText);
 				npcs.add(newNpc);
 				actors.add(newNpc);
 
@@ -210,6 +228,10 @@ class PlayState extends FlxState {
 			case "pharmacy":
 				var newBuilding = new Building(entity.x, entity.y, BuildingType.Pharmacy, player);
 				buildings.add(newBuilding);
+
+			case "radio":
+				var newRadio = new Radio(entity.x - 8, entity.y - 8);
+				radios.add(newRadio);
 		}
 	}
 
@@ -232,6 +254,8 @@ class PlayState extends FlxState {
 		// overlaps between player and buildings
 		FlxG.overlap(player, buildings, playerOverBuilding);
 
+		FlxG.overlap(player, radios, playerOverRadio);
+
 		// pressing period/comma zooms in/out
 		if (FlxG.keys.justPressed.PERIOD) {
 			SetZoom(FlxG.camera.zoom += 0.2);
@@ -243,15 +267,17 @@ class PlayState extends FlxState {
 
 	function humanTouchesPickup(_actor:Human, _pickup:Pickup) {
 		if (_actor.alive && _actor.exists && _pickup.alive && _pickup.exists) {
-			switch _pickup.type {
-				case Coin:
-					_pickup.kill();
-					_actor.pickupPickup(_pickup);
-				case Paracetamol:
-					if (_actor.health < _actor.MAX_HEALTH) {
-						_pickup.kill();
+			if (_actor.canPickUp) {
+				switch _pickup.type {
+					case Coin:
+						_pickup.myKill();
 						_actor.pickupPickup(_pickup);
-					}
+					case Paracetamol:
+						if (_actor.health < _actor.MAX_HEALTH) {
+							_pickup.myKill();
+							_actor.pickupPickup(_pickup);
+						}
+				}
 			}
 		}
 	}
@@ -259,22 +285,17 @@ class PlayState extends FlxState {
 	function humanTouchesItem(_actor:Human, _item:Item) {
 		if (_actor.alive && _actor.exists && _item.alive && _item.exists && !_item.isEquipped) {
 			if (_actor.canPickUp) {
-				switch _item.type {
-					case Mask:
-						if (_actor.items.members[0] == null) {
-							_item.equipTo(_actor);
-							_actor.equipItem(_item);
-						}
-					case Gloves:
-						if (_actor.items.members[1] == null) {
-							_item.equipTo(_actor);
-							_actor.equipItem(_item);
-						}
-					case Sanitizer:
-						if (_actor.items.members[2] == null) {
-							_item.equipTo(_actor);
-							_actor.equipItem(_item);
-						}
+				if (_actor.items.members[_item.slot] == null) {
+					_item.tryToEquipTo(_actor);
+					_actor.equipItem(_item);
+				} else if (_item.type == ItemType.Syringe) {
+					if (_actor.items.members[_item.slot + 1] == null) {
+						_item.tryToEquipTo(_actor);
+						_actor.equipItem(_item);
+					} else if (_actor.items.members[_item.slot + 2] == null) {
+						_item.tryToEquipTo(_actor);
+						_actor.equipItem(_item);
+					}
 				}
 			}
 		}
@@ -310,6 +331,17 @@ class PlayState extends FlxState {
 			}
 			if (_player.interactPressed()) {
 				_spawner.interact();
+			}
+		}
+	}
+
+	function playerOverRadio(_player:Player, _radio:Radio) {
+		if (_player.alive && _player.exists && _radio.alive && _radio.exists) {
+			if (!_radio.isTextVisible) {
+				_radio.showProximityText();
+			}
+			if (_player.interactPressed()) {
+				_radio.interact();
 			}
 		}
 	}

@@ -1,5 +1,10 @@
 package myClasses;
 
+import flixel.util.FlxColor;
+import flixel.text.FlxText;
+import flixel.tweens.FlxEase;
+import flixel.tweens.FlxTween;
+import myClasses.Pickup.PickupType;
 import flixel.tile.FlxTilemap;
 import flixel.util.FlxTimer;
 import flixel.FlxG;
@@ -14,10 +19,16 @@ class NPC extends Human {
 
 	var viewLenght:Int;
 
+	public var thanksText(default, null):FlxText;
+
 	public function new() {
 		super();
 
 		idleTimer = new FlxTimer();
+
+		thanksText = new FlxText(x, y, 0, "");
+		thanksText.setBorderStyle(OUTLINE_FAST, FlxColor.BLACK, 1);
+		thanksText.alpha = 0;
 	}
 
 	override public function initialize(_x:Float, _y:Float, ?_sprite:String) {
@@ -26,8 +37,8 @@ class NPC extends Human {
 		isUpFree = true;
 		isDownFree = true;
 		isLeftFree = true;
-		isRightFree = true;	
-		
+		isRightFree = true;
+
 		viewLenght = 100;
 	}
 
@@ -120,5 +131,52 @@ class NPC extends Human {
 		} else {
 			isUpFree = false;
 		}
+	}
+
+	override function equipItem(_item:Item) {
+		super.equipItem(_item);
+
+		// npcs drop coins as thanks when receiving items
+		var coinAmount = FlxG.random.int(1, 5);
+		for (i in 0...coinAmount) {
+			canPickUp = false;
+			var newCoin = PlayState.pickups.recycle(Pickup.new);
+			newCoin.initialize(x, y, PickupType.Coin);
+			PlayState.pickups.add(newCoin);
+
+			if (getPosition().distanceTo(PlayState.player.getPosition()) < 200) {
+				FlxTween.tween(newCoin, {
+					x: PlayState.player.getMidpoint().x,
+					y: PlayState.player.getMidpoint().y
+				}, 0.4);
+			} else {
+				var maxVel = 300;
+				newCoin.velocity.set(FlxG.random.float(-maxVel, maxVel), FlxG.random.float(-maxVel, maxVel));
+			}
+		}
+		var t = new FlxTimer().start(0.5, function(_) canPickUp = true);
+
+		var randomThanks = FlxG.random.getObject([
+			"Thanks.",
+			"Thanks!",
+			"Thank you",
+			"Very good!",
+			"Awesome!",
+			"Thank you kind stranger",
+			"Many thanks",
+			"My day is better!",
+			"thx m8",
+			"Nice one",
+			"Whatever...",
+			"I didn't want this",
+			"Have some gold in return",
+			"Take this you nasty virus!"
+		]);
+		thanksText.setPosition(x, y - 15);
+		thanksText.text = randomThanks;
+		thanksText.alpha = 1;
+		FlxTween.tween(thanksText, {
+			alpha: 0
+		}, 3);
 	}
 }

@@ -19,7 +19,7 @@ class HUD extends FlxTypedGroup<FlxSprite> {
 	var dividerColor:FlxColor;
 
 	var txtHealth:FlxText;
-	var txtInfected:FlxText;
+	var txtDeaths:FlxText;
 
 	var txtInfChance:FlxText;
 
@@ -68,10 +68,10 @@ class HUD extends FlxTypedGroup<FlxSprite> {
 		txtInfChance.setBorderStyle(SHADOW, FlxColor.BLACK, 1);
 		add(txtInfChance);
 
-		txtInfected = new FlxText(FlxG.width, background.y + 5, 0, "INFECTED: 70 / 70", 25);
-		txtInfected.setPosition(txtInfected.x - txtInfected.width, txtInfected.y);
-		txtInfected.setBorderStyle(SHADOW, FlxColor.BLACK, 1);
-		add(txtInfected);
+		txtDeaths = new FlxText(FlxG.width, background.y + 5, 0, "INFECTED: 70, DEATHS: 200", 25);
+		txtDeaths.setPosition(txtDeaths.x - txtDeaths.width, txtDeaths.y);
+		txtDeaths.setBorderStyle(SHADOW, FlxColor.BLACK, 1);
+		add(txtDeaths);
 
 		coinIcon = new FlxSprite(0, 0, AssetPaths.coin__png);
 		coinIcon.scale.set(6, 6);
@@ -98,11 +98,15 @@ class HUD extends FlxTypedGroup<FlxSprite> {
 	public function updateHUD() {
 		txtHealth.text = 'HP: ${player.health}/${player.MAX_HEALTH}';
 
-		txtInfected.text = 'INFECTED: ${nOfInfected}/${actors.countLiving()}';
+		txtDeaths.text = 'INFECTED: ${nOfInfected}, DEATHS: ${PlayState.deadCount}';
 
 		txtCoins.text = 'x: ${player.coinAmount}';
 
-		txtInfChance.text = 'CHANCE OF INFECTION: ${player.infectionChance}%';
+		if (player.isImmune) {
+			txtInfChance.text = 'CHANCE OF INFECTION: 0%';
+		} else {
+			txtInfChance.text = 'CHANCE OF INFECTION: ${player.infectionChance}%';
+		}
 	}
 
 	// need timer to run this function

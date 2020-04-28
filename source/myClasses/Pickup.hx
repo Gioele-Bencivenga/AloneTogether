@@ -19,6 +19,8 @@ class Pickup extends FlxSprite {
 
 	public var type(default, null):PickupType;
 
+	var dissolveTween:FlxTween;
+
 	/// SOUNDS
 	var getSound:String;
 	var explosionSound:String;
@@ -35,6 +37,7 @@ class Pickup extends FlxSprite {
 		type = _type;
 
 		angle = 0;
+		alpha = 1;
 		drag.x = drag.y = 300;
 
 		/// GRAPHIC
@@ -69,16 +72,24 @@ class Pickup extends FlxSprite {
 				getSound = AssetPaths.pillGet__wav;
 				explosionSound = AssetPaths.pillExplosion__wav;
 		}
+
+		if (type == PickupType.Coin) {
+			dissolveTween = FlxTween.tween(this, {alpha: 0}, 120, {onComplete: function(_) kill()});
+			dissolveTween.start();
+		}
 	}
 
-	override function kill() {
+	public function myKill() {
 		alive = false;
 
-		DeanSound.playSound(getSound, 0.5, this, PlayState.player, 200);
+		DeanSound.playSound(getSound, 0.3, this, PlayState.player, 200);
 
 		var randX = FlxG.random.int(-10, 10);
 		var randY = FlxG.random.int(20, 45);
 		var randAngle = FlxG.random.int(500, 1000);
+
+		if (dissolveTween != null)
+			dissolveTween.cancel();
 
 		FlxTween.tween(this, {
 			x: x + randX,
@@ -89,8 +100,8 @@ class Pickup extends FlxSprite {
 			onComplete: function(_) {
 				emitter.focusOn(this);
 				emitter.start();
-				DeanSound.playSound(explosionSound, 0.5, this, PlayState.player, 200);
-				exists = false;
+				DeanSound.playSound(explosionSound, 0.3, this, PlayState.player, 200);
+				kill();
 			}
 		});
 	}

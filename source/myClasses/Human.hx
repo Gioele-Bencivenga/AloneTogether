@@ -1,5 +1,7 @@
 package myClasses;
 
+import haxe.rtti.CType.Typedef;
+import myClasses.Item.ItemType;
 import flixel.system.FlxSound;
 import myClasses.Pickup.PickupType;
 import flixel.tweens.FlxEase;
@@ -121,6 +123,8 @@ class Human extends FlxSprite {
 		x = _x;
 		y = _y;
 
+		alive = true;
+
 		if (FlxG.random.bool(80)) {
 			health = FlxG.random.int(35, 40);
 		} else {
@@ -132,7 +136,7 @@ class Human extends FlxSprite {
 		isImmune = false;
 		canBeInfected = true;
 		infectionChance = BASE_INFECTIONCHANCE;
-		coinAmount = FlxG.random.int(1, 5);
+		coinAmount = FlxG.random.int(1, 3);
 		items = new FlxTypedGroup<Item>(3);
 		canPickUp = true;
 		canMove = true;
@@ -178,7 +182,10 @@ class Human extends FlxSprite {
 		emitter.autoUpdateHitbox = true;
 
 		/// HEALTH REGEN
-		healthRegenTimer.start(10, function(_) health += 1, 0);
+		healthRegenTimer.start(7, function(_) {
+			if (health < MAX_HEALTH)
+				health += 1;
+		}, 0);
 	}
 
 	override function update(elapsed:Float) {
@@ -251,11 +258,11 @@ class Human extends FlxSprite {
 		if (canPlayFootsteps) {
 			if (velocity.x != 0 || velocity.y != 0) {
 				if (running) {
-					DeanSound.playSound(runSound, 0.5, this, PlayState.player, 100);
+					DeanSound.playSound(runSound, 0.3, this, PlayState.player, 100);
 					canPlayFootsteps = false;
 					var t = new FlxTimer().start(0.3, function(_) canPlayFootsteps = true);
 				} else {
-					DeanSound.playSound(footstepsSound, 0.5, this, PlayState.player, 100);
+					DeanSound.playSound(footstepsSound, 0.3, this, PlayState.player, 100);
 					canPlayFootsteps = false;
 					var t = new FlxTimer().start(0.5, function(_) canPlayFootsteps = true);
 				}
@@ -264,41 +271,51 @@ class Human extends FlxSprite {
 	}
 
 	function updateChucking() {
+		// maybe change this to avoid using hardcoded indexes
 		if (j) {
 			if (items.members[0] != null) {
-				chuckItem(items.members[0]);
-			} else {
-				if (items.members[1] != null) {
-					chuckItem(items.members[1]);
-				} else {
-					if (items.members[2] != null) {
-						chuckItem(items.members[2]);
-					}
-				}
+				chuckItem(items.members[0], 0);
+			} else if (items.members[1] != null) {
+				chuckItem(items.members[1], 1);
+			} else if (items.members[2] != null) {
+				chuckItem(items.members[2], 2);
+			} else if (items.members[3] != null) {
+				chuckItem(items.members[3], 3);
+			} else if (items.members[4] != null) {
+				chuckItem(items.members[4], 4);
+			} else if (items.members[5] != null) {
+				chuckItem(items.members[5], 5);
 			}
 		} else if (k) {
 			if (items.members[1] != null) {
-				chuckItem(items.members[1]);
+				chuckItem(items.members[1], 1);
 			}
 		} else if (l) {
-			if (items.members[2] != null) {
-				chuckItem(items.members[2]);
+			if (items.members[5] != null) {
+				chuckItem(items.members[5], 5);
+			} else if (items.members[4] != null) {
+				chuckItem(items.members[4], 4);
+			} else if (items.members[3] != null) {
+				chuckItem(items.members[3], 3);
+			} else if (items.members[2] != null) {
+				chuckItem(items.members[2], 2);
 			}
 		}
 	}
 
-	function chuckItem(_item:Item) {
+	function chuckItem(_item:Item, _slot:Int) {
+		// prevent human from picking up the item right away
+		canPickUp = false;
+		pickupTimer.start(0.3, function(_) canPickUp = true);
+		
 		FlxTween.tween(_item, { // we move the item to player's position before chucking (prevents items getting chucked when inside solids)
 			x: this.x,
 			y: this.y,
 		}, 0.07, {
 			onComplete: function(_) {
-				// prevent human from picking up the item right away
-				canPickUp = false;
-				pickupTimer.start(0.25, function(_) canPickUp = true);
 				// unequip item
 				_item.unEquip();
-				items.members[_item.slot] = null;
+				items.members[_slot] = null;
 				// set velocity
 				_item.velocity.set(500, 0);
 				_item.velocity.rotate(FlxPoint.weak(0, 0), directionAngle);
@@ -323,14 +340,12 @@ class Human extends FlxSprite {
 	}
 
 	public function pickupPickup(_pickup:Pickup) {
-		if (canPickUp) {
-			switch _pickup.type {
-				case Coin:
-					coinAmount += 1;
+		switch _pickup.type {
+			case Coin:
+				coinAmount += 1;
 
-				case Paracetamol:
-					heal(5);
-			}
+			case Paracetamol:
+				heal(6);
 		}
 	}
 
@@ -349,15 +364,48 @@ class Human extends FlxSprite {
 			newCoin.velocity.set(FlxG.random.float(-maxVel, maxVel), FlxG.random.float(-maxVel, maxVel));
 		}
 		canPickUp = false;
-		var t = new FlxTimer().start(0.2, function(_) canPickUp = true);
+		var t = new FlxTimer().start(0.3, function(_) canPickUp = true);
 	}
 
 	public function equipItem(_item:Item) {
-		items.members[_item.slot] = _item;
-		infectionChance -= _item.infectionChanceReduction;
-		maxGermSpeed -= _item.germSpeedReduction;
+		// this is horrible I hate it but I'm in a rush..
+		if (canPickUp) {
+			if (_item.type == ItemType.Syringe) {
+				if (items.members[_item.slot] != null) {
+					if (items.members[_item.slot + 1] != null) {
+						if (items.members[_item.slot + 2] != null) {} else {
+							items.members[_item.slot + 2] = _item;
+						}
+					} else {
+						items.members[_item.slot + 1] = _item;
+					}
+				} else {
+					items.members[_item.slot] = _item;
+				}
+			} else {
+				items.members[_item.slot] = _item;
+			}
 
-		emitter.speed.set(5, maxGermSpeed);
+			if (_item.type == ItemType.Syringe) {
+				if (sicknessTimer.active)
+					sicknessTimer.cancel();
+				if (sicknessEffectsInterval.active)
+					sicknessEffectsInterval.cancel();
+				if (immunityTimer.active)
+					immunityTimer.cancel();
+				if (emitter.emitting)
+					emitter.emitting = false;
+
+				canBeInfected = false;
+				isImmune = true;
+				isInfected = false;
+			}
+
+			infectionChance -= _item.infectionChanceReduction;
+			maxGermSpeed -= _item.germSpeedReduction;
+
+			emitter.speed.set(5, maxGermSpeed);
+		}
 	}
 
 	public function tryToInfect() {
@@ -390,7 +438,7 @@ class Human extends FlxSprite {
 		emitter.emitting = false;
 		sicknessEffectsInterval.cancel();
 
-		immunityTimer.start(FlxG.random.int(2, 10),
+		immunityTimer.start(FlxG.random.int(4, 7),
 			function(_) isImmune = false); // once a person is cured from the virus it becomes immune to it for some time
 	}
 

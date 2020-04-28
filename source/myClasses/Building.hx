@@ -26,7 +26,7 @@ class Building extends FlxSprite {
 	public var cureProgressBar(default, null):FlxBar;
 	public var cureProgressText(default, null):FlxText;
 
-	public var hasFoundCure(default, null):Bool;
+	public var cureFound(default, null):Bool;
 
 	var buildingName:String;
 
@@ -43,6 +43,10 @@ class Building extends FlxSprite {
 
 	var textDissolver:FlxTimer; // after switching isTextVisible on the timer switches it off
 
+	/// AUDIO
+	var interactSuccSound:String;
+	var interactFailSound:String;
+
 	public function new(_x:Float, _y:Float, _type:BuildingType, _player:Player) {
 		super(_x, _y);
 
@@ -52,9 +56,9 @@ class Building extends FlxSprite {
 		alpha = 0.001; // this object's sprite shouldn't be visible but setting this to 0 makes the hitbox disappear for some reason
 
 		canInteract = true;
-		coinAmount = FlxG.random.int(0, 30);
-		coinNeededForCure = FlxG.random.int(100, 150);
-		hasFoundCure = false;
+		coinAmount = FlxG.random.int(0, 20);
+		coinNeededForCure = FlxG.random.int(130, 150);
+		cureFound = false;
 
 		textDissolver = new FlxTimer();
 
@@ -86,7 +90,6 @@ class Building extends FlxSprite {
 		}
 		proximityText = new FlxText(proxTextXpos, y, 0, interactOptions);
 		proximityText.setBorderStyle(OUTLINE_FAST, FlxColor.BLUE, 1);
-		proximityText.shadowOffset.set(-1, 1);
 		hideProximityText();
 
 		/// PROGRESS BAR AND TEXT
@@ -101,6 +104,10 @@ class Building extends FlxSprite {
 			cureProgressText.setPosition((x + (width / 2)) - (cureProgressText.width / 2), cureProgressBar.y);
 			cureProgressText.setBorderStyle(SHADOW, FlxColor.BLACK, 1);
 		}
+
+		/// AUDIO
+		interactSuccSound = AssetPaths.interactionSuccess__wav;
+		interactFailSound = AssetPaths.interactionFailed__wav;
 	}
 
 	public function showProximityText() {
@@ -190,9 +197,9 @@ class Building extends FlxSprite {
 			}
 
 			if (interactSuccess) {
-				// play positive sound
+				DeanSound.playSound(interactSuccSound, 1, this, PlayState.player, 100);
 			} else {
-				// play negative sound
+				DeanSound.playSound(interactFailSound, 1, this, PlayState.player, 100);
 			}
 		}
 	}
@@ -201,7 +208,23 @@ class Building extends FlxSprite {
 		coinAmount += _amount;
 
 		if (coinAmount >= coinNeededForCure) {
-			hasFoundCure = true;
+			completeCure(_amount);
+		}
+	}
+
+	function completeCure(_amountToSpit:Int) {
+		cureFound = true;
+		player.hasFoundCure = true;
+
+		if (type == BuildingType.Research) {
+			interactOptions = "A cure has been found!\nDeliver it to the denizens!\nKeep donating money to produce the cure for everyone!\nOne syringe delivered to all medical\ncenters for each coin donated.\n\nPress [1] for 2 coins\nPress [2] for 10 coins\nPress [3] for 20 coins\nPress [4] for 30 coins";
+			proximityText.text = interactOptions;
+		}
+
+		for (building in PlayState.buildings) {
+			for (i in 0..._amountToSpit) {
+				building.spitItem(ItemType.Syringe);
+			}
 		}
 	}
 

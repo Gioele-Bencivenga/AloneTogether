@@ -4,7 +4,11 @@ import flixel.util.FlxColor;
 import flixel.FlxG;
 
 class Player extends Human {
+	public var hasFoundCure:Bool;
+
 	public function new() {
+		hasFoundCure = false;
+
 		super();
 	}
 
@@ -12,7 +16,7 @@ class Player extends Human {
 		super.initialize(_x, _y, _sprite);
 
 		health = 30;
-		coinAmount = FlxG.random.int(10, 20);
+		coinAmount = FlxG.random.int(20, 40);
 	}
 
 	override function update(elapsed:Float) {

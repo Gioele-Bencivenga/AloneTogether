@@ -10,6 +10,7 @@ enum abstract ItemType(Int) to Int {
 	var Mask = 0;
 	var Gloves = 1;
 	var Sanitizer = 2;
+	var Syringe = 3;
 }
 
 class Item extends FlxSprite {
@@ -81,6 +82,13 @@ class Item extends FlxSprite {
 				infectionChanceReduction = 22;
 				germSpeedReduction = 5;
 				slot = 2;
+			case Syringe:
+				loadGraphic(AssetPaths.syringe__png, false, 16, 16);
+				maxDistFromOwner = 20;
+				velocityMultiplier = 2;
+				infectionChanceReduction = 100;
+				germSpeedReduction = 10;
+				slot = 3;
 		}
 
 		scale.set(BASE_SCALE, BASE_SCALE);
@@ -93,28 +101,42 @@ class Item extends FlxSprite {
 		followOwner();
 	}
 
-	public function equipTo(_owner:Human) {
-		if (!isEquipped) {
-			solid = false;
-			owner = _owner;
-			isEquipped = true;
-			setColorTransform(1, 1, 1, 1, 50, 100, 50);
-
-			DeanSound.playSound(equipSound1, 1, this, PlayState.player, 200);
-			FlxTween.tween(this.scale, {
-				x: BASE_SCALE + 0.7,
-				y: BASE_SCALE + 0.5,
-			}, 0.15, {
-				ease: FlxEase.expoOut,
-				onComplete: function(_) DeanSound.playSound(equipSound2, 1, this, PlayState.player, 200)
-			}).then(FlxTween.tween(this.scale, {
-				x: EQUIPPED_SCALE,
-				y: EQUIPPED_SCALE,
-			}, 0.15, {
-				ease: FlxEase.expoOut,
-				onComplete: function(_) updateHitbox()
-			}));
+	public function tryToEquipTo(_owner:Human) {
+		if (_owner.items.members[slot] == null) {
+			if (!isEquipped) {
+				equipTo(_owner);
+			}
+		} else {
+			if (type == ItemType.Syringe) {
+				if (_owner.items.members[slot + 1] == null) {
+					equipTo(_owner);
+				} else if (_owner.items.members[slot + 2] == null) {
+					equipTo(_owner);
+				}
+			}
 		}
+	}
+
+	function equipTo(_owner:Human) {
+		solid = false;
+		owner = _owner;
+		isEquipped = true;
+		setColorTransform(1, 1, 1, 1, 50, 100, 50);
+
+		DeanSound.playSound(equipSound1, 1, this, PlayState.player, 200);
+		FlxTween.tween(this.scale, {
+			x: BASE_SCALE + 0.7,
+			y: BASE_SCALE + 0.5,
+		}, 0.15, {
+			ease: FlxEase.expoOut,
+			onComplete: function(_) DeanSound.playSound(equipSound2, 1, this, PlayState.player, 200)
+		}).then(FlxTween.tween(this.scale, {
+			x: EQUIPPED_SCALE,
+			y: EQUIPPED_SCALE,
+		}, 0.15, {
+			ease: FlxEase.expoOut,
+			onComplete: function(_) updateHitbox()
+		}));
 	}
 
 	public function unEquip() {
@@ -122,6 +144,7 @@ class Item extends FlxSprite {
 		isEquipped = false;
 		setColorTransform();
 		solid = true;
+
 		scale.set(BASE_SCALE, BASE_SCALE);
 		updateHitbox();
 
